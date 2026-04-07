@@ -7,6 +7,7 @@
 
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
+import AmbientParticles from "./components/ui/AmbientParticles";
 
 import Dashboard from "./pages/Dashboard";
 import Landing from "./pages/Landing";
@@ -22,6 +23,9 @@ import Teams from "./pages/Teams";
 export default function App() {
   return (
     <div className="min-h-screen bg-[#030712] text-slate-200 transition-colors duration-300 relative">
+      {/* Ambient floating particles */}
+      <AmbientParticles />
+      
       {/* Global background pattern */}
       <div className="fixed inset-0 cyber-grid opacity-[0.02] pointer-events-none" />
       

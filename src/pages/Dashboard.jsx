@@ -1,89 +1,14 @@
 import { useState, useMemo, useRef } from "react"
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion"
 import { Plus, Search, ChevronDown, X, Compass, Bookmark, User, TrendingUp, Users, ExternalLink, ArrowLeft } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+import { supabase } from "../lib/supabaseClient"
 import { useBookmarks } from "../hooks/useBookmarks"
+import { useProjects } from "../hooks/useProjects"
+import { useJoinRequests } from "../hooks/useJoinRequests"
+import useAuthStore from "../store/authStore"
 
-// --- Sample Data ---
-const CURRENT_USER_ID = "current_user"
-
-const sampleProjects = [
-  {
-    id: "1",
-    title: "AI Code Reviewer",
-    description: "An intelligent code review assistant that uses GPT-4 to analyze pull requests and provide actionable feedback.",
-    techStack: ["Python", "TypeScript", "React", "Docker"],
-    status: "open",
-    owner_id: "fake_owner",
-    repo_url: "https://github.com/example/ai-code-reviewer",
-    team: [
-      { user_id: "m1", profiles: { display_name: "Alex Chen", username: "alexc", avatar_url: "" }, role: "owner" },
-      { user_id: "m2", profiles: { display_name: "Sarah Kim", username: "sarahk", avatar_url: "" }, role: "member" },
-      { user_id: "m3", profiles: { display_name: "Mike Ross", username: "miker", avatar_url: "" }, role: "pending" },
-    ],
-  },
-  {
-    id: "2",
-    title: "DevMetrics Dashboard",
-    description: "Real-time developer productivity metrics with beautiful visualizations and team insights.",
-    techStack: ["Next.js", "TypeScript", "PostgreSQL", "GraphQL"],
-    status: "open",
-    team: [
-      { user_id: "m4", profiles: { display_name: "Emma Wilson", username: "emmaw" }, role: "owner" },
-      { user_id: "m5", profiles: { display_name: "John Doe", username: "johnd" }, role: "member" },
-    ],
-  },
-  {
-    id: "3",
-    title: "Rust Game Engine",
-    description: "A lightweight, high-performance game engine written in Rust with WebGPU support.",
-    techStack: ["Rust", "TypeScript"],
-    status: "open",
-    team: [
-      { user_id: "m6", profiles: { display_name: "David Park" }, role: "owner" },
-      { user_id: "m7", profiles: { display_name: "Lisa Wang" }, role: "member" },
-      { user_id: "m8", profiles: { display_name: "Tom Harris" }, role: "member" },
-    ],
-  },
-  {
-    id: "4",
-    title: "ML Pipeline Builder",
-    description: "Visual drag-and-drop interface for building and deploying machine learning pipelines.",
-    techStack: ["Python", "React", "Docker", "MongoDB"],
-    status: "closed",
-    team: [
-      { user_id: "m9", profiles: { display_name: "James Brown" }, role: "owner" },
-    ],
-  },
-]
-
-// User's own projects
-const myProjects = [
-  {
-    id: "my1",
-    title: "BuildSpace Platform",
-    description: "A developer collaboration platform to find teammates and launch projects together.",
-    techStack: ["React", "Vite", "Supabase", "Tailwind"],
-    status: "open",
-    owner_id: CURRENT_USER_ID,
-    repo_url: "https://github.com/me/buildspace",
-    team: [
-      { user_id: CURRENT_USER_ID, profiles: { display_name: "You", username: "me" }, role: "owner" },
-      { user_id: "m10", profiles: { display_name: "Partner Dev" }, role: "member" },
-    ],
-  },
-  {
-    id: "my2",
-    title: "CLI Task Manager",
-    description: "A terminal-based task manager with vim keybindings and cloud sync.",
-    techStack: ["Go", "SQLite", "Redis"],
-    status: "open",
-    owner_id: CURRENT_USER_ID,
-    team: [
-      { user_id: CURRENT_USER_ID, profiles: { display_name: "You" }, role: "owner" },
-    ],
-  },
-]
-
+// --- Constants ---
 const availableTech = ["React", "Next.js", "TypeScript", "Python", "Node.js", "Rust", "Go", "PostgreSQL", "MongoDB", "GraphQL", "TailwindCSS", "Docker"]
 
 const topSkills = [
@@ -113,8 +38,8 @@ function LeftSidebar({ activeTab, setActiveTab }) {
           onClick={() => setActiveTab(tab.id)}
           className={`
             flex items-center gap-3 px-4 py-3 rounded-none font-mono text-sm transition-all duration-200 cursor-pointer
-            ${activeTab === tab.id 
-              ? "bg-[#e8ff47]/10 text-[#e8ff47] border-l-2 border-[#e8ff47]" 
+            ${activeTab === tab.id
+              ? "bg-[#e8ff47]/10 text-[#e8ff47] border-l-2 border-[#e8ff47]"
               : "text-[#666] hover:text-white hover:bg-white/5 border-l-2 border-transparent"
             }
           `}
@@ -126,7 +51,7 @@ function LeftSidebar({ activeTab, setActiveTab }) {
       <div className="mt-auto px-4 py-4">
         <div className="p-4 bg-[#0a0a0a] border border-[#1f1f1f] rounded-none">
           <p className="text-xs text-[#666] font-mono">
-            // Connected as<br/>
+            // Connected as<br />
             <span className="text-[#e8ff47]">{"{ currentUser }"}</span>
           </p>
         </div>
@@ -157,45 +82,57 @@ function FeedRightSidebar() {
   )
 }
 
-function ProjectRightSidebar({ project }) {
+function ProjectRightSidebar({ project, onSendJoinRequest, hasRequested, getRequestStatus, user }) {
   const [isRequesting, setIsRequesting] = useState(false)
-  const [requested, setRequested] = useState(false)
+  const navigate = useNavigate()
   const isClosed = project?.status === "closed"
+  const isOwner = user && project?.owner_id === user.id
+  const requestStatus = getRequestStatus?.(project?.id)
+  const alreadyRequested = hasRequested?.(project?.id) || requestStatus === 'accepted'
 
-  const handleJoinTeam = () => {
+  const handleJoinTeam = async () => {
+    if (!user) {
+      navigate("/auth")
+      return
+    }
+    if (isOwner || alreadyRequested || isClosed) return
+
     setIsRequesting(true)
-    setTimeout(() => {
-      setIsRequesting(false)
-      setRequested(true)
-    }, 1500)
+    await onSendJoinRequest(project.id, project.owner_id, project.title)
+    setIsRequesting(false)
   }
 
-  const members = project?.team || []
+  const getButtonLabel = () => {
+    if (isOwner) return "Your Project"
+    if (requestStatus === 'accepted') return "Accepted ✓"
+    if (requestStatus === 'declined') return "Declined"
+    if (alreadyRequested) return "Request Sent ✓"
+    if (isClosed) return "Team Closed"
+    return "Request to Join"
+  }
 
   return (
     <div className="flex flex-col h-full">
       <div className="p-6 border-b border-[#1f1f1f]">
         <button
           onClick={handleJoinTeam}
-          disabled={isClosed || isRequesting || requested}
+          disabled={isClosed || isRequesting || alreadyRequested || isOwner}
           className={`
             w-full px-4 py-3 font-mono text-sm font-bold transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 rounded-none
-            ${isClosed 
-              ? "bg-[#111] text-[#444] cursor-not-allowed border border-[#1f1f1f]" 
-              : requested
+            ${isClosed || isOwner
+              ? "bg-[#111] text-[#444] cursor-not-allowed border border-[#1f1f1f]"
+              : alreadyRequested || requestStatus === 'accepted'
                 ? "bg-[#e8ff47]/10 text-[#e8ff47] border border-[#e8ff47]/30"
-                : "bg-[#e8ff47] text-black hover:shadow-[0_0_20px_rgba(232,255,71,0.3)]"
+                : requestStatus === 'declined'
+                  ? "bg-red-500/10 text-red-400 border border-red-500/30 cursor-not-allowed"
+                  : "bg-[#e8ff47] text-black hover:shadow-[0_0_20px_rgba(232,255,71,0.3)]"
             }
           `}
         >
           {isRequesting ? (
             <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>⟳</motion.span>
-          ) : requested ? (
-            "Request Sent ✓"
-          ) : isClosed ? (
-             "Team Closed"
           ) : (
-            "Request to Join"
+            getButtonLabel()
           )}
         </button>
       </div>
@@ -203,29 +140,28 @@ function ProjectRightSidebar({ project }) {
       <div className="p-6 overflow-y-auto flex-1">
         <h3 className="text-sm font-bold text-white mb-6 uppercase tracking-wider flex items-center gap-2">
           <Users className="w-4 h-4 text-[#e8ff47]" />
-          Team ({members.length})
+          Project Info
         </h3>
-        
+
         <div className="space-y-4">
-          {members.map((m, i) => (
-            <div key={i} className="flex flex-col gap-2 p-3 bg-[#0a0a0a] border border-[#1f1f1f] rounded-none group hover:border-[#e8ff47]/30 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-[#111] border border-[#1f1f1f] flex items-center justify-center">
-                  <span className="text-[#888] font-mono text-xs uppercase">
-                    {(m.profiles?.display_name || "??").substring(0, 2)}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{m.profiles?.display_name}</p>
-                </div>
-                <span className={`text-[10px] uppercase font-mono px-2 py-0.5 border ${
-                  m.role === "owner" ? "border-[#e8ff47]/50 text-[#e8ff47] bg-[#e8ff47]/5" : "border-[#333] text-[#666]"
-                }`}>
-                  {m.role}
-                </span>
-              </div>
+          <div className="p-3 bg-[#0a0a0a] border border-[#1f1f1f] rounded-none">
+            <p className="text-[10px] uppercase font-mono text-[#666] mb-1">Tech Stack</p>
+            <div className="flex flex-wrap gap-1">
+              {(project?.tech_stack || project?.techStack || []).map((t, i) => (
+                <span key={i} className="px-2 py-0.5 text-[10px] font-mono bg-[#111] text-[#999] border border-[#1f1f1f]">{t}</span>
+              ))}
             </div>
-          ))}
+          </div>
+          <div className="p-3 bg-[#0a0a0a] border border-[#1f1f1f] rounded-none">
+            <p className="text-[10px] uppercase font-mono text-[#666] mb-1">Status</p>
+            <span className={`text-xs font-mono ${project?.status === 'open' ? 'text-[#e8ff47]' : 'text-[#555]'}`}>{project?.status?.toUpperCase()}</span>
+          </div>
+          {project?.repo_url && (
+            <a href={project.repo_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-3 bg-[#0a0a0a] border border-[#1f1f1f] rounded-none text-sm font-mono text-[#888] hover:text-[#e8ff47] hover:border-[#e8ff47]/30 transition-colors">
+              <ExternalLink className="w-4 h-4" />
+              View Repository
+            </a>
+          )}
         </div>
       </div>
     </div>
@@ -317,26 +253,25 @@ function ProjectCard({ project, onClick, index, isBookmarked, onToggleBookmark }
       <div className="absolute top-3 right-3 flex gap-2 items-center">
         <div
           data-bookmark-btn="true"
-          className={`p-2.5 rounded-none border transition-all duration-200 hover:scale-110 cursor-pointer ${
-            isBookmarked 
-              ? "border-[#e8ff47] bg-[#e8ff47]/10 text-[#e8ff47]" 
-              : "border-[#333] bg-[#0a0a0a] text-[#666] hover:border-[#e8ff47]/50 hover:text-[#e8ff47]"
-          }`}
+          className={`p-2.5 rounded-none border transition-all duration-200 hover:scale-110 cursor-pointer ${isBookmarked
+            ? "border-[#e8ff47] bg-[#e8ff47]/10 text-[#e8ff47]"
+            : "border-[#333] bg-[#0a0a0a] text-[#666] hover:border-[#e8ff47]/50 hover:text-[#e8ff47]"
+            }`}
         >
-          <Bookmark 
-            size={16} 
+          <Bookmark
+            size={16}
             className={`pointer-events-none transition-all duration-200 ${isBookmarked ? 'fill-current' : ''}`}
           />
         </div>
         <span className={`inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest ${project.status === "open" ? "text-[#e8ff47]" : "text-[#555]"}`}>
-           {project.status}
+          {project.status}
         </span>
       </div>
 
       <h3 className="text-lg font-bold text-white mb-2 font-mono group-hover:text-[#e8ff47] transition-colors pr-16">{project.title}</h3>
       <p className="text-sm text-[#777] mb-4 line-clamp-2 h-10">{project.description}</p>
       <div className="flex flex-wrap gap-2 mt-auto">
-        {project.techStack.map((tech) => (
+        {(project.tech_stack || project.techStack || []).map((tech) => (
           <span key={tech} className="px-2 py-1 bg-[#111] text-[#999] border border-[#1f1f1f] font-mono text-[10px] uppercase">{tech}</span>
         ))}
       </div>
@@ -344,9 +279,10 @@ function ProjectCard({ project, onClick, index, isBookmarked, onToggleBookmark }
   )
 }
 
-function FeedCenterView({ projects, searchQuery, setSearchQuery, selectedTech, setSelectedTech, statusFilter, setStatusFilter, onProjectClick, setIsModalOpen, activeTab, bookmarkedIds, onToggleBookmark }) {
+function FeedCenterView({ projects, myProjectsList, searchQuery, setSearchQuery, selectedTech, setSelectedTech, statusFilter, setStatusFilter, onProjectClick, setIsModalOpen, activeTab, bookmarkedIds, onToggleBookmark, user }) {
   const [isTechOpen, setIsTechOpen] = useState(false)
   const dropdownRef = useRef(null)
+  const navigate = useNavigate()
 
   const toggleTech = (tech) => {
     if (selectedTech.includes(tech)) { setSelectedTech(selectedTech.filter((t) => t !== tech)) }
@@ -356,7 +292,7 @@ function FeedCenterView({ projects, searchQuery, setSearchQuery, selectedTech, s
   // Get projects based on active tab
   const getDisplayProjects = () => {
     if (activeTab === 'profile') {
-      return myProjects
+      return myProjectsList || []
     }
     if (activeTab === 'bookmarks') {
       return projects.filter(p => bookmarkedIds.includes(p.id))
@@ -375,7 +311,7 @@ function FeedCenterView({ projects, searchQuery, setSearchQuery, selectedTech, s
   const title = getTitle()
 
   return (
-    <motion.div 
+    <motion.div
       key="feed"
       initial={{ x: -20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
@@ -384,11 +320,14 @@ function FeedCenterView({ projects, searchQuery, setSearchQuery, selectedTech, s
       className="absolute inset-0 overflow-y-auto p-6 lg:p-10 scrollbar-hide"
     >
       <div className="flex items-center justify-between mb-8">
-         <h1 className="text-3xl font-bold text-white font-mono tracking-tight">
+        <h1 className="text-3xl font-bold text-white font-mono tracking-tight">
           {title.main} <span className="text-[#e8ff47]">{title.highlight}</span>
         </h1>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            if (!user) { navigate("/auth"); return }
+            setIsModalOpen(true)
+          }}
           className="flex items-center gap-2 bg-[#e8ff47] text-black font-bold hover:bg-[#e8ff47]/90 cursor-pointer font-mono text-sm px-4 py-2 rounded-none"
         >
           <Plus className="w-4 h-4" />
@@ -449,10 +388,10 @@ function FeedCenterView({ projects, searchQuery, setSearchQuery, selectedTech, s
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
         <AnimatePresence>
           {displayProjects.map((project, index) => (
-            <ProjectCard 
-              key={project.id} 
-              project={project} 
-              index={index} 
+            <ProjectCard
+              key={project.id}
+              project={project}
+              index={index}
               onClick={onProjectClick}
               isBookmarked={bookmarkedIds.includes(project.id)}
               onToggleBookmark={onToggleBookmark}
@@ -461,11 +400,11 @@ function FeedCenterView({ projects, searchQuery, setSearchQuery, selectedTech, s
         </AnimatePresence>
         {displayProjects.length === 0 && (
           <div className="col-span-full py-20 text-center border border-[#1f1f1f] bg-[#0a0a0a] rounded-none">
-             <p className="text-[#666] font-mono">
-               {activeTab === 'bookmarks' ? 'No bookmarked projects yet.' : 
-                activeTab === 'profile' ? 'You haven\'t created any projects yet.' : 
-                'No projects found matching criteria.'}
-             </p>
+            <p className="text-[#666] font-mono">
+              {activeTab === 'bookmarks' ? 'No bookmarked projects yet.' :
+                activeTab === 'profile' ? 'You haven\'t created any projects yet.' :
+                  'No projects found matching criteria.'}
+            </p>
           </div>
         )}
       </div>
@@ -473,11 +412,50 @@ function FeedCenterView({ projects, searchQuery, setSearchQuery, selectedTech, s
   )
 }
 
-function ProjectDetailCenterView({ project, onBack }) {
+function ProjectDetailCenterView({ project, onBack, user, incomingRequests, updateRequest, refetchRequests }) {
   if (!project) return null
 
+  const isOwner = user?.id === project.owner_id
+  const projectRequests = isOwner
+    ? (incomingRequests || []).filter((r) => r.project_id === project.id && r.status === "pending")
+    : []
+
+  const handleAccept = async (req) => {
+    await updateRequest(req.id, "accepted")
+    // Add to project_members
+    await supabase.from("project_members").insert({
+      project_id: req.project_id,
+      user_id: req.requester_id,
+      role: "member",
+    })
+    // Notify the requester
+    const projTitle = req.projects?.title || "the project"
+    await supabase.from("notifications").insert({
+      user_id: req.requester_id,
+      type: "join_request",
+      message: `Your request to join "${projTitle}" was accepted!`,
+      ref_id: req.project_id,
+      read: false,
+    })
+    refetchRequests?.()
+  }
+
+  const handleDecline = async (req) => {
+    await updateRequest(req.id, "declined")
+    // Notify the requester
+    const projTitle = req.projects?.title || "the project"
+    await supabase.from("notifications").insert({
+      user_id: req.requester_id,
+      type: "join_request",
+      message: `Your request to join "${projTitle}" was declined.`,
+      ref_id: req.project_id,
+      read: false,
+    })
+    refetchRequests?.()
+  }
+
   return (
-    <motion.div 
+    <motion.div
       key="detail"
       initial={{ x: 20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
@@ -485,7 +463,7 @@ function ProjectDetailCenterView({ project, onBack }) {
       transition={{ duration: 0.3 }}
       className="absolute inset-0 overflow-y-auto p-6 lg:p-10 scrollbar-hide bg-[#040404]"
     >
-      <button 
+      <button
         onClick={onBack}
         className="flex items-center gap-2 text-[#888] hover:text-white font-mono text-sm mb-8 transition-colors cursor-pointer group"
       >
@@ -495,7 +473,7 @@ function ProjectDetailCenterView({ project, onBack }) {
 
       <div className="border border-[#1f1f1f] bg-[#0a0a0a] p-8 md:p-12 mb-8 rounded-none relative overflow-hidden group">
         <div className="absolute inset-0 bg-gradient-to-br from-[#e8ff47]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-        
+
         <div className="flex items-start justify-between flex-wrap gap-4 mb-6 relative z-10">
           <h1 className="text-3xl md:text-4xl font-bold text-white font-mono tracking-tight">{project.title}</h1>
           <span className={`px-3 py-1 text-xs font-mono font-bold uppercase border rounded-none ${project.status === 'open' ? 'border-[#e8ff47]/30 text-[#e8ff47] bg-[#e8ff47]/10' : 'border-[#444] text-[#888] bg-[#111]'}`}>
@@ -508,7 +486,7 @@ function ProjectDetailCenterView({ project, onBack }) {
         </p>
 
         <div className="flex flex-wrap gap-2 mb-8 relative z-10">
-          {project.techStack.map((tech) => (
+          {(project.tech_stack || project.techStack || []).map((tech) => (
             <span key={tech} className="px-3 py-1.5 bg-[#111] text-[#ccc] border border-[#1f1f1f] font-mono text-xs uppercase rounded-none tracking-wider">
               {tech}
             </span>
@@ -516,18 +494,18 @@ function ProjectDetailCenterView({ project, onBack }) {
         </div>
 
         {project.repo_url && (
-           <a
-             href={project.repo_url}
-             target="_blank"
-             rel="noopener noreferrer"
-             className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-mono font-bold text-black bg-[#e8ff47] hover:bg-white transition-colors cursor-pointer rounded-none relative z-10"
-           >
-             <ExternalLink className="w-4 h-4 text-black" />
-             View Repository
-           </a>
+          <a
+            href={project.repo_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-mono font-bold text-black bg-[#e8ff47] hover:bg-white transition-colors cursor-pointer rounded-none relative z-10"
+          >
+            <ExternalLink className="w-4 h-4 text-black" />
+            View Repository
+          </a>
         )}
       </div>
-      
+
       <div className="border border-[#1f1f1f] bg-[#0a0a0a] rounded-none p-8">
         <h2 className="text-xl font-bold font-mono text-white mb-4 border-b border-[#1f1f1f] pb-4">Project Overview</h2>
         <div className="text-[#888] leading-relaxed space-y-4 text-sm">
@@ -536,7 +514,7 @@ function ProjectDetailCenterView({ project, onBack }) {
             By joining, you will be expected to contribute to the core features and participate in code reviews.
           </p>
           <p>
-            Whether you specialize in frontend UI, backend architecture, or DevOps, there is a place for your expertise. 
+            Whether you specialize in frontend UI, backend architecture, or DevOps, there is a place for your expertise.
             The owner is looking for dynamic individuals ready to push boundaries and build secure, performant software.
           </p>
           <div className="mt-6 p-4 border-l-4 border-[#e8ff47] bg-[#e8ff47]/5">
@@ -544,6 +522,68 @@ function ProjectDetailCenterView({ project, onBack }) {
           </div>
         </div>
       </div>
+
+      {/* PENDING REQUESTS — only for project owner */}
+      {isOwner && (
+        <div className="border border-[#1f1f1f] bg-[#0a0a0a] rounded-none p-8">
+          <h2 className="text-xl font-bold font-mono text-white mb-4 flex items-center gap-2">
+            <Users className="w-5 h-5 text-[#e8ff47]" />
+            Pending Requests
+            {projectRequests.length > 0 && (
+              <span className="ml-2 px-2 py-0.5 text-xs font-mono bg-[#e8ff47]/10 text-[#e8ff47] border border-[#e8ff47]/20 rounded-none">
+                {projectRequests.length}
+              </span>
+            )}
+          </h2>
+
+          {projectRequests.length === 0 ? (
+            <p className="text-sm text-[#555] font-mono">No pending requests.</p>
+          ) : (
+            <div className="space-y-3">
+              {projectRequests.map((req) => {
+                const profile = req.requester_profile || {}
+                const initials = (profile.display_name || profile.username || "U")
+                  .split(" ")
+                  .map((w) => w[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2)
+
+                return (
+                  <div key={req.id} className="flex items-center justify-between gap-4 p-4 bg-[#040404] border border-[#1f1f1f] rounded-none">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-[#1f1f1f] flex items-center justify-center text-xs font-mono text-[#e8ff47] rounded-none flex-shrink-0">
+                        {initials}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          {profile.display_name || profile.username || "Unknown User"}
+                        </p>
+                        <p className="text-xs text-[#555] font-mono">wants to join</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => handleDecline(req)}
+                        className="px-3 py-1.5 text-xs font-mono text-red-400 border border-red-500/30 hover:bg-red-500/10 transition-colors cursor-pointer rounded-none"
+                      >
+                        Decline
+                      </button>
+                      <button
+                        onClick={() => handleAccept(req)}
+                        className="px-3 py-1.5 text-xs font-mono text-black bg-[#e8ff47] hover:bg-[#d4e83e] font-bold transition-colors cursor-pointer rounded-none"
+                      >
+                        Accept
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
     </motion.div>
   )
 }
@@ -633,7 +673,15 @@ export default function Dashboard() {
   const [selectedTech, setSelectedTech] = useState([])
   const [statusFilter, setStatusFilter] = useState("all")
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [projectsDB, setProjectsDB] = useState(sampleProjects) // Replace with Supabase eventually
+
+  // Auth
+  const user = useAuthStore((s) => s.user)
+
+  // Projects — Supabase-backed
+  const { projects: allProjects, myProjects: myProjectsList, createProject } = useProjects()
+
+  // Join Requests — Supabase-backed
+  const { sendJoinRequest, hasRequested, getRequestStatus, incomingRequests, updateRequest, refetch: refetchRequests } = useJoinRequests()
 
   // Bookmarks — syncs with Supabase when logged in, localStorage otherwise
   const { bookmarkedIds, toggleBookmark: handleToggleBookmark } = useBookmarks()
@@ -641,22 +689,25 @@ export default function Dashboard() {
   // Derive the active project object if any
   const activeProjectPayload = useMemo(() => {
     if (!activeProjectId) return null;
-    return projectsDB.find(p => p.id === activeProjectId) || null;
-  }, [activeProjectId, projectsDB])
+    return allProjects.find(p => p.id === activeProjectId) || null;
+  }, [activeProjectId, allProjects])
+
+  // Normalize tech_stack field name for filtering
+  const getTechStack = (p) => p.tech_stack || p.techStack || []
 
   // Filter projects for feed
   const filteredProjects = useMemo(() => {
-    return projectsDB.filter((p) => {
+    return allProjects.filter((p) => {
       const matchS = !searchQuery || p.title.toLowerCase().includes(searchQuery.toLowerCase()) || p.description.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchT = selectedTech.length === 0 || selectedTech.some((t) => p.techStack.includes(t))
+      const matchT = selectedTech.length === 0 || selectedTech.some((t) => getTechStack(p).includes(t))
       const matchF = statusFilter === "all" || p.status === statusFilter
       return matchS && matchT && matchF
     })
-  }, [projectsDB, searchQuery, selectedTech, statusFilter])
+  }, [allProjects, searchQuery, selectedTech, statusFilter])
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-[#040404] text-white flex overflow-hidden">
-      
+
       {/* 1. Left Sidebar Navigation */}
       <div className="hidden md:block w-64 shrink-0 border-r border-[#1f1f1f] bg-[#070707] z-20 shadow-xl shadow-black relative">
         <LeftSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -666,9 +717,10 @@ export default function Dashboard() {
       <div className="flex-1 relative bg-[#040404] overflow-hidden">
         <AnimatePresence mode="wait">
           {!activeProjectId ? (
-            <FeedCenterView 
+            <FeedCenterView
               key={`feed-center-${activeTab}`}
               projects={filteredProjects}
+              myProjectsList={myProjectsList}
               searchQuery={searchQuery} setSearchQuery={setSearchQuery}
               selectedTech={selectedTech} setSelectedTech={setSelectedTech}
               statusFilter={statusFilter} setStatusFilter={setStatusFilter}
@@ -677,12 +729,17 @@ export default function Dashboard() {
               activeTab={activeTab}
               bookmarkedIds={bookmarkedIds}
               onToggleBookmark={handleToggleBookmark}
+              user={user}
             />
           ) : (
-            <ProjectDetailCenterView 
+            <ProjectDetailCenterView
               key="detail-center"
               project={activeProjectPayload}
               onBack={() => setActiveProjectId(null)}
+              user={user}
+              incomingRequests={incomingRequests}
+              updateRequest={updateRequest}
+              refetchRequests={refetchRequests}
             />
           )}
         </AnimatePresence>
@@ -711,7 +768,13 @@ export default function Dashboard() {
               transition={{ duration: 0.3 }}
               className="absolute inset-0"
             >
-              <ProjectRightSidebar project={activeProjectPayload} />
+              <ProjectRightSidebar
+                project={activeProjectPayload}
+                onSendJoinRequest={sendJoinRequest}
+                hasRequested={hasRequested}
+                getRequestStatus={getRequestStatus}
+                user={user}
+              />
             </motion.div>
           )}
         </AnimatePresence>
@@ -721,15 +784,12 @@ export default function Dashboard() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={(newP) => {
-          setProjectsDB([{
-              id: Date.now().toString(),
-              title: newP.name,
-              description: newP.description,
-              techStack: newP.techStack,
-              status: "open",
-              team: [{ user_id: 'me', profiles: { display_name: "You" }, role: "owner" }],
-              repo_url: newP.githubUrl
-          }, ...projectsDB])
+          createProject({
+            title: newP.name,
+            description: newP.description,
+            techStack: newP.techStack,
+            repoUrl: newP.githubUrl,
+          })
         }}
       />
     </div>

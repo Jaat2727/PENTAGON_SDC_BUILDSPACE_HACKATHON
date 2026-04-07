@@ -33,56 +33,53 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`sticky top-0 z-50 w-full h-16 flex justify-between items-center px-4 md:px-8 transition-colors duration-300 tracking-tight font-sans ${
-        scrolled ? "bg-[#040404]/80 backdrop-blur-md" : "bg-[#040404]"
-      } border-b border-[#1f1f1f]`}
+      className={`sticky top-0 z-50 w-full h-16 flex items-center justify-between px-4 md:px-8 transition-colors duration-300 tracking-tight font-sans ${scrolled ? "bg-[#040404]/80 backdrop-blur-md" : "bg-[#040404]"
+        } border-b border-[#1f1f1f]`}
     >
       {/* 1. LEFT SECTION - Logo */}
-      <div className="flex items-center min-w-[150px]">
+      <div className="flex items-center shrink-0">
         <Link to="/" className="text-white font-mono font-bold text-xl tracking-tighter">
           [ BS ]
         </Link>
       </div>
 
       {/* 2. CENTER SECTION - Links */}
-      <div className="hidden md:flex h-full relative items-center gap-8">
+      <div className="flex items-center gap-6 md:gap-8">
         {NAV_LINKS
-          .filter(link => !(isLoggedIn && link.id === 'home')) // Hide Home when logged in
+          .filter(link => !(isLoggedIn && link.id === 'home'))
           .map((link) => {
-          // Active state logic
-          const isActive = link.path === '/' ? location.pathname === '/' : location.pathname.startsWith(link.path);
-          
-          return (
-            <Link
-              key={link.id}
-              to={link.path}
-              className={`relative h-full flex items-center text-sm font-medium transition-colors ${
-                isActive ? "text-white" : "text-[#888888] hover:text-white"
-              }`}
-            >
-              {link.label}
-              {isActive && (
-                <motion.div
-                  layoutId="activeNavUnderline"
-                  className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#e8ff47]"
-                  initial={false}
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                />
-              )}
-            </Link>
-          );
-        })}
+            const isActive = link.path === '/' ? location.pathname === '/' : location.pathname.startsWith(link.path);
+
+            return (
+              <Link
+                key={link.id}
+                to={link.path}
+                className={`relative h-full flex items-center text-sm font-medium transition-colors whitespace-nowrap ${isActive ? "text-white" : "text-[#888888] hover:text-white"
+                  }`}
+              >
+                {link.label}
+                {isActive && (
+                  <motion.div
+                    layoutId="activeNavUnderline"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#e8ff47]"
+                    initial={false}
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+              </Link>
+            );
+          })}
       </div>
 
       {/* 3. RIGHT SECTION - Actions */}
-      <div className="flex items-center gap-3 min-w-[150px] justify-end">
+      <div className="flex items-center gap-2 md:gap-3 shrink-0">
         {/* Search Bar */}
-        <div className="relative hidden lg:flex items-center group">
+        <div className="relative hidden xl:flex items-center group">
           <FiSearch className="absolute left-3 text-[#888888] w-4 h-4 group-focus-within:text-[#e8ff47] transition-colors" />
           <input
             type="text"
             placeholder="Search..."
-            className="w-56 bg-[#0a0a0a] border border-[#1f1f1f] text-white text-sm h-9 pl-9 pr-10 focus:outline-none focus:border-[#e8ff47] transition-colors rounded-none placeholder:text-[#555555]"
+            className="w-48 lg:w-56 bg-[#0a0a0a] border border-[#1f1f1f] text-white text-sm h-9 pl-9 pr-10 focus:outline-none focus:border-[#e8ff47] transition-colors rounded-none placeholder:text-[#555555]"
           />
           <div className="absolute right-2 flex items-center justify-center border border-[#1f1f1f] bg-[#040404] px-1.5 h-5 text-[10px] text-[#888888] rounded-none font-mono">
             ⌘K
@@ -90,18 +87,17 @@ export default function Navbar() {
         </div>
 
         {/* Notification */}
-        <Link 
+        <Link
           to="/notifications"
           className="relative text-[#888888] hover:text-white transition-colors p-1.5 flex items-center justify-center rounded-none cursor-pointer"
           title="Notifications"
         >
           <FiBell className="w-5 h-5" />
-          {/* Square Indicator */}
           <div className="absolute top-1 right-1.5 w-2 h-2 bg-[#e8ff47] border-2 border-[#040404] rounded-none"></div>
         </Link>
 
         {/* Settings */}
-        <Link 
+        <Link
           to="/settings"
           className="text-[#888888] hover:text-white transition-colors p-1.5 flex items-center justify-center rounded-none"
           title="Settings"
@@ -111,7 +107,7 @@ export default function Navbar() {
 
         {/* Profile - Show only when logged in */}
         {isLoggedIn && (
-          <Link 
+          <Link
             to="/profile"
             className="text-[#888888] hover:text-white transition-colors p-1.5 flex items-center justify-center rounded-none"
             title="Profile"
@@ -122,26 +118,24 @@ export default function Navbar() {
 
         {/* Authentication Section */}
         {isLoggedIn ? (
-          // Logout Button (when logged in)
           <button
             onClick={handleLogout}
-            className="px-4 h-9 flex items-center justify-center text-sm font-medium text-white hover:text-[#e8ff47] transition-colors rounded-none border border-[#1f1f1f] hover:border-[#e8ff47]"
+            className="px-3 md:px-4 h-9 flex items-center justify-center text-sm font-medium text-white hover:text-[#e8ff47] transition-colors rounded-none border border-[#1f1f1f] hover:border-[#e8ff47] whitespace-nowrap"
           >
             Logout
           </button>
         ) : (
-          // Login/Signup Buttons (when not logged in)
           <>
-            <Link 
+            <Link
               to="/auth"
-              className="px-4 h-9 flex items-center justify-center text-sm font-medium text-white hover:text-[#e8ff47] transition-colors rounded-none border border-[#1f1f1f] hover:border-[#e8ff47]"
+              className="px-3 md:px-4 h-9 flex items-center justify-center text-sm font-medium text-white hover:text-[#e8ff47] transition-colors rounded-none border border-[#1f1f1f] hover:border-[#e8ff47] whitespace-nowrap"
             >
               Login
             </Link>
 
-            <Link 
+            <Link
               to="/auth?mode=signup"
-              className="px-4 h-9 flex items-center justify-center text-sm font-bold text-black bg-[#e8ff47] hover:bg-[#e8ff47]/90 transition-colors rounded-none"
+              className="px-3 md:px-4 h-9 flex items-center justify-center text-sm font-bold text-black bg-[#e8ff47] hover:bg-[#e8ff47]/90 transition-colors rounded-none whitespace-nowrap"
             >
               Sign Up
             </Link>
