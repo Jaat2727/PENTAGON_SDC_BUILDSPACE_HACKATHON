@@ -1,0 +1,89 @@
+/* -------------------------------------------------------
+   BuildSpace — global stylesheet
+   Uses Tailwind CSS v4 with custom theme tokens.
+   Dark mode works by toggling the "dark" class on <html>.
+------------------------------------------------------- */
+
+@import "tailwindcss";
+
+/* -- custom design tokens (colours, fonts, radii) -- */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* brand palette */
+  --color-brand-50:  #eef4ff;
+  --color-brand-100: #dbe6fe;
+  --color-brand-200: #bfd3fe;
+  --color-brand-300: #93b4fd;
+  --color-brand-400: #6090fa;
+  --color-brand-500: #3b6cf6;
+  --color-brand-600: #254beb;
+  --color-brand-700: #1d38d8;
+  --color-brand-800: #1e2faf;
+  --color-brand-900: #1e2b8a;
+
+  /* surface colours (light mode defaults) */
+  --color-surface:     #ffffff;
+  --color-surface-alt: #f8fafc;
+  --color-surface-inv: #0f172a;
+  --color-border:      #e2e8f0;
+
+  /* text shades */
+  --color-heading: #0f172a;
+  --color-body:    #475569;
+  --color-muted:   #94a3b8;
+}
+
+/* -- dark-mode overrides -- */
+@variant dark (&:where(.dark, .dark *)) ;
+
+/* -- base resets -- */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-sans text-body antialiased;
+    background: var(--color-surface);
+  }
+
+  .dark body,
+  body.dark-body {
+    background: #0f172a;
+    color: #e2e8f0;
+  }
+}
+
+/* -- utility helpers -- */
+@layer utilities {
+  .glass {
+    backdrop-filter: blur(12px) saturate(1.6);
+    background: rgba(255, 255, 255, 0.6);
+  }
+  .dark .glass {
+    background: rgba(15, 23, 42, 0.65);
+  }
+
+  /* hide scrollbar but keep scroll */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* simple fade-in keyframe for cards */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-up {
+    animation: fadeUp 0.4s ease-out both;
+  }
+
+  /* subtle pulse used on the notification badge */
+  @keyframes softPulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.15); }
+  }
+  .animate-soft-pulse {
+    animation: softPulse 2s ease-in-out infinite;
+  }
+}

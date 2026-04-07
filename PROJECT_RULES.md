@@ -1,0 +1,9 @@
+- Stack: React 18 + Vite, Tailwind CSS v4, Supabase JS v2, React Router v6, Zustand
+- Never break existing routes or component interfaces
+- Always use the existing supabaseClient from src/lib/supabaseClient.js
+- Always use authStore for session — never call supabase.auth directly in components
+- All new DB interactions must respect existing RLS policies
+- Keep bundle size lean — no new heavy dependencies without justification
+- Every UI change must work in both dark and light mode
+- npm run build must pass after every task — no exceptions
+- Mobile-first: test at 375px width for every new component
