@@ -117,7 +117,7 @@ function TiltCard({ children, className = "" }) {
   )
 }
 
-function OpportunityCard({ opportunity }) {
+function OpportunityCard({ opportunity, onView }) {
   const typeColors = {
     role: { bg: "bg-[#e8ff47]/10", text: "text-[#e8ff47]", label: "Open Role" },
     hackathon: { bg: "bg-[#e8ff47]/10", text: "text-[#e8ff47]", label: "Hackathon" },
@@ -147,7 +147,10 @@ function OpportunityCard({ opportunity }) {
             <Calendar className="h-3 w-3" />
             {opportunity.deadline}
           </div>
-          <button className="border border-[#1f1f1f] bg-transparent px-3 py-1 text-xs text-white transition-colors hover:border-[#e8ff47] hover:text-[#e8ff47] cursor-pointer rounded-none">
+          <button 
+            onClick={() => onView(opportunity)}
+            className="border border-[#1f1f1f] bg-transparent px-3 py-1 text-xs text-white transition-colors hover:border-[#e8ff47] hover:text-[#e8ff47] cursor-pointer rounded-none"
+          >
             View
           </button>
         </div>
@@ -234,6 +237,7 @@ function KanbanColumn({
   opportunities,
   index,
   icon: Icon,
+  onViewOpportunity,
 }) {
   return (
     <motion.div
@@ -260,7 +264,7 @@ function KanbanColumn({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.12 + i * 0.08 }}
             >
-              <OpportunityCard opportunity={opp} />
+              <OpportunityCard opportunity={opp} onView={onViewOpportunity} />
             </motion.div>
           ))}
         </AnimatePresence>
@@ -345,8 +349,90 @@ function PostOpportunityModal({ isOpen, onClose }) {
   )
 }
 
+function OpportunityDetailModal({ opportunity, onClose }) {
+  if (!opportunity) return null
+
+  const typeColors = {
+    role: { bg: "bg-[#e8ff47]/10", text: "text-[#e8ff47]", label: "Open Role" },
+    hackathon: { bg: "bg-[#e8ff47]/10", text: "text-[#e8ff47]", label: "Hackathon" },
+    closed: { bg: "bg-[#333]", text: "text-[#666]", label: "Closed" },
+  }
+  const typeStyle = typeColors[opportunity.type]
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md"
+        onClick={onClose}
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 border border-[#1f1f1f] bg-[#0a0a0a] rounded-none font-sans"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1f1f1f]">
+          <div className="flex items-center gap-3">
+            <span className={`${typeStyle.bg} ${typeStyle.text} px-2 py-1 text-xs font-medium`}>
+              {typeStyle.label}
+            </span>
+            {opportunity.company && (
+              <span className="text-sm text-[#888]">{opportunity.company}</span>
+            )}
+          </div>
+          <button onClick={onClose} className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-400 transition-colors cursor-pointer" title="Close" />
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-4">
+          <h2 className="text-xl font-medium tracking-tight text-white">{opportunity.title}</h2>
+          
+          <p className="text-sm text-[#888] leading-relaxed">{opportunity.description}</p>
+
+          <div>
+            <h3 className="text-xs font-medium text-[#666] mb-2 uppercase tracking-wider">Required Skills</h3>
+            <div className="flex flex-wrap gap-2">
+              {opportunity.skills.map((skill) => (
+                <span key={skill} className="bg-[#111] border border-[#1f1f1f] px-3 py-1.5 text-xs text-[#e8ff47]">
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-sm text-[#666]">
+            <Calendar className="h-4 w-4" />
+            <span>Deadline: {opportunity.deadline}</span>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-[#1f1f1f] flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 border border-[#1f1f1f] bg-transparent px-4 py-2.5 text-sm text-white transition-colors hover:border-[#e8ff47] cursor-pointer rounded-none"
+          >
+            Close
+          </button>
+          <button
+            className="flex-1 bg-[#e8ff47] px-4 py-2.5 text-sm font-medium text-black transition-colors hover:bg-[#e8ff47]/90 cursor-pointer rounded-none"
+          >
+            Apply Now
+          </button>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
 export default function Opportunities() {
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedOpportunity, setSelectedOpportunity] = useState(null)
 
   const openRoles = opportunities.filter((o) => o.type === "role")
   const hackathons = opportunities.filter((o) => o.type === "hackathon")
@@ -383,14 +469,15 @@ export default function Opportunities() {
             className="flex flex-1 gap-6 md:gap-8 justify-start lg:justify-center overflow-x-auto overflow-y-hidden pb-4"
             style={{ perspective: "1200px", scrollbarWidth: 'thin', scrollbarColor: '#1f1f1f transparent' }}
           >
-            <KanbanColumn title="Open Roles" opportunities={openRoles} index={0} icon={Briefcase} />
-            <KanbanColumn title="Hackathon Teams" opportunities={hackathons} index={1} icon={Zap} />
-            <KanbanColumn title="Closed" opportunities={closed} index={2} icon={X} />
+            <KanbanColumn title="Open Roles" opportunities={openRoles} index={0} icon={Briefcase} onViewOpportunity={setSelectedOpportunity} />
+            <KanbanColumn title="Hackathon Teams" opportunities={hackathons} index={1} icon={Zap} onViewOpportunity={setSelectedOpportunity} />
+            <KanbanColumn title="Closed" opportunities={closed} index={2} icon={X} onViewOpportunity={setSelectedOpportunity} />
           </motion.div>
         </main>
       </motion.div>
 
       <PostOpportunityModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <OpportunityDetailModal opportunity={selectedOpportunity} onClose={() => setSelectedOpportunity(null)} />
     </div>
   )
 }

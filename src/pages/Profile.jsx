@@ -150,46 +150,170 @@ function ProfileHeader({
   avatarUrl,
   isLive = false,
 }) {
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editData, setEditData] = useState({
+    name,
+    bio,
+    location,
+    avatarUrl
+  });
+
+  const handleSave = () => {
+    // Here you would typically save to backend/database
+    console.log('Saving profile data:', editData);
+    setIsEditOpen(false);
+  };
+
   return (
-    <BentoCard className="col-span-1 md:col-span-2 row-span-2 p-6 lg:p-8" delay={0}>
-      <div className="flex h-full flex-col gap-6">
-        <div className="flex items-start gap-6">
-          <div className="relative">
-            <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-none ring-2 ring-[#e8ff47]/20 border border-white/5 overflow-hidden">
-              <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
-            </div>
-            {isLive && (
-              <div className="absolute -bottom-1 -right-1 flex items-center gap-1.5 rounded-none bg-black px-2 py-1 border border-[#e8ff47]/30">
-                <span className="relative flex size-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#e8ff47] opacity-75" />
-                  <span className="relative inline-flex size-2 rounded-full bg-[#e8ff47]" />
-                </span>
-                <span className="text-xs font-mono font-medium text-[#e8ff47]">LIVE</span>
+    <>
+      <BentoCard className="col-span-1 md:col-span-2 row-span-2 p-6 lg:p-8" delay={0}>
+        <div className="flex h-full flex-col gap-6">
+          {/* Header with Edit Button */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-white">Profile</h2>
+            <button
+              onClick={() => setIsEditOpen(true)}
+              className="flex items-center text-sm px-3 py-1 cursor-pointer font-mono border border-white/5 text-slate-400 hover:text-[#e8ff47] hover:bg-[#e8ff47]/10 hover:border-[#e8ff47]/30 transition-all rounded-none"
+            >
+              <Pencil className="size-3.5 mr-1.5" />
+              Edit
+            </button>
+          </div>
+
+          <div className="flex items-start gap-6">
+            <div className="relative">
+              <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-none ring-2 ring-[#e8ff47]/20 border border-white/5 overflow-hidden">
+                <img src={editData.avatarUrl} alt={editData.name} className="w-full h-full object-cover" />
               </div>
-            )}
+              {isLive && (
+                <div className="absolute -bottom-1 -right-1 flex items-center gap-1.5 rounded-none bg-black px-2 py-1 border border-[#e8ff47]/30">
+                  <span className="relative flex size-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#e8ff47] opacity-75" />
+                    <span className="relative inline-flex size-2 rounded-full bg-[#e8ff47]" />
+                  </span>
+                  <span className="text-xs font-mono font-medium text-[#e8ff47]">LIVE</span>
+                </div>
+              )}
+            </div>
+            <div className="flex-1">
+              <h1 className="font-sans text-2xl font-bold tracking-tight text-white lg:text-3xl text-balance">
+                {editData.name}
+              </h1>
+              <p className="text-slate-400 font-mono text-sm mt-1">@{username}</p>
+            </div>
           </div>
-          <div className="flex-1">
-            <h1 className="font-sans text-2xl font-bold tracking-tight text-white lg:text-3xl text-balance">
-              {name}
-            </h1>
-            <p className="text-slate-400 font-mono text-sm mt-1">@{username}</p>
+          <p className="text-slate-300 flex-1 leading-relaxed text-pretty">
+            {editData.bio}
+          </p>
+          <div className="flex flex-wrap items-center gap-4 text-sm font-mono text-slate-500">
+            <div className="flex items-center gap-1.5">
+              <MapPin className="size-4 text-[#e8ff47]" />
+              <span>{editData.location}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Calendar className="size-4 text-[#e8ff47]" />
+              <span>Joined {joinDate}</span>
+            </div>
           </div>
         </div>
-        <p className="text-slate-300 flex-1 leading-relaxed text-pretty">
-          {bio}
-        </p>
-        <div className="flex flex-wrap items-center gap-4 text-sm font-mono text-slate-500">
-          <div className="flex items-center gap-1.5">
-            <MapPin className="size-4 text-[#e8ff47]" />
-            <span>{location}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Calendar className="size-4 text-[#e8ff47]" />
-            <span>Joined {joinDate}</span>
-          </div>
-        </div>
-      </div>
-    </BentoCard>
+      </BentoCard>
+
+      {/* Edit Profile Modal */}
+      <AnimatePresence>
+        {isEditOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setIsEditOpen(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="bg-[#050505] border border-white/10 w-full max-w-lg p-6 rounded-none relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button 
+                onClick={() => setIsEditOpen(false)} 
+                className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="size-5" />
+              </button>
+              
+              <h3 className="text-xl font-bold text-white mb-2">Edit Profile</h3>
+              <p className="text-slate-400 text-sm mb-6">Update your profile information</p>
+              
+              <div className="space-y-4">
+                {/* Name Field */}
+                <div>
+                  <label className="block text-sm font-mono text-slate-300 mb-2">Name</label>
+                  <input
+                    type="text"
+                    value={editData.name}
+                    onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                    className="w-full px-3 py-2 bg-[#0a0a0a] border border-white/10 text-white text-sm rounded-none focus:outline-none focus:border-[#e8ff47] transition-colors"
+                    placeholder="Your name"
+                  />
+                </div>
+
+                {/* Bio Field */}
+                <div>
+                  <label className="block text-sm font-mono text-slate-300 mb-2">Bio</label>
+                  <textarea
+                    value={editData.bio}
+                    onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
+                    rows={3}
+                    className="w-full px-3 py-2 bg-[#0a0a0a] border border-white/10 text-white text-sm rounded-none focus:outline-none focus:border-[#e8ff47] transition-colors resize-none"
+                    placeholder="Tell us about yourself"
+                  />
+                </div>
+
+                {/* Location Field */}
+                <div>
+                  <label className="block text-sm font-mono text-slate-300 mb-2">Location</label>
+                  <input
+                    type="text"
+                    value={editData.location}
+                    onChange={(e) => setEditData({ ...editData, location: e.target.value })}
+                    className="w-full px-3 py-2 bg-[#0a0a0a] border border-white/10 text-white text-sm rounded-none focus:outline-none focus:border-[#e8ff47] transition-colors"
+                    placeholder="Your location"
+                  />
+                </div>
+
+                {/* Avatar URL Field */}
+                <div>
+                  <label className="block text-sm font-mono text-slate-300 mb-2">Avatar URL</label>
+                  <input
+                    type="url"
+                    value={editData.avatarUrl}
+                    onChange={(e) => setEditData({ ...editData, avatarUrl: e.target.value })}
+                    className="w-full px-3 py-2 bg-[#0a0a0a] border border-white/10 text-white text-sm rounded-none focus:outline-none focus:border-[#e8ff47] transition-colors"
+                    placeholder="https://example.com/avatar.jpg"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6 pt-4 border-t border-white/10">
+                <button
+                  onClick={() => setIsEditOpen(false)}
+                  className="flex-1 px-4 py-2 text-sm font-mono text-slate-400 border border-white/10 hover:text-white hover:border-white/20 transition-colors rounded-none"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="flex-1 px-4 py-2 text-sm font-mono text-black bg-[#e8ff47] hover:bg-[#e8ff47]/90 transition-colors rounded-none"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
 
@@ -226,33 +350,35 @@ function SkillsGrid({ initialSkills }) {
   }
 
   return (
-    <BentoCard className="col-span-1 md:col-span-2 p-6" delay={1}>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-white">Skills</h2>
-        <button
-          onClick={() => setIsOpen(true)}
-          className="flex items-center text-sm px-3 py-1 cursor-pointer font-mono border border-white/5 text-slate-400 hover:text-[#e8ff47] hover:bg-[#e8ff47]/10 hover:border-[#e8ff47]/30 transition-all rounded-none"
-        >
-          <Pencil className="size-3.5 mr-1.5" />
-          Edit
-        </button>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {skills.map((skill, index) => (
-          <motion.div
-            key={skill.name + index}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: index * 0.05 }}
-            className={`group relative cursor-default border px-3 py-1 text-xs font-mono transition-all duration-300 ${levelColors[skill.level]} ${levelBorders[skill.level]} rounded-none`}
+    <>
+      <BentoCard className="col-span-1 md:col-span-2 p-6" delay={1}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white">Skills</h2>
+          <button
+            onClick={() => setIsOpen(true)}
+            className="flex items-center text-sm px-3 py-1 cursor-pointer font-mono border border-white/5 text-slate-400 hover:text-[#e8ff47] hover:bg-[#e8ff47]/10 hover:border-[#e8ff47]/30 transition-all rounded-none"
           >
-            <span>{skill.name}</span>
-          </motion.div>
-        ))}
-      </div>
+            <Pencil className="size-3.5 mr-1.5" />
+            Edit
+          </button>
+        </div>
 
-      {/* Basic Custom Modal for Editing */}
+        <div className="flex flex-wrap gap-2">
+          {skills.map((skill, index) => (
+            <motion.div
+              key={skill.name + index}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.05 }}
+              className={`group relative cursor-default border px-3 py-1 text-xs font-mono transition-all duration-300 ${levelColors[skill.level]} ${levelBorders[skill.level]} rounded-none`}
+            >
+              <span>{skill.name}</span>
+            </motion.div>
+          ))}
+        </div>
+      </BentoCard>
+
+      {/* Skills Edit Modal - Outside BentoCard */}
       <AnimatePresence>
         {isOpen && (
           <motion.div 
@@ -260,16 +386,22 @@ function SkillsGrid({ initialSkills }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setIsOpen(false)}
           >
             <motion.div 
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
               className="bg-[#050505] border border-white/10 w-full max-w-md p-6 rounded-none relative"
+              onClick={(e) => e.stopPropagation()}
             >
-              <button onClick={() => setIsOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer">
+              <button 
+                onClick={() => setIsOpen(false)} 
+                className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer"
+              >
                 <X className="size-5" />
               </button>
+              
               <h3 className="text-xl font-bold text-white mb-2">Edit Skills</h3>
               <p className="text-slate-400 text-sm mb-6">Add or remove your technical skills</p>
               
@@ -280,20 +412,21 @@ function SkillsGrid({ initialSkills }) {
                   value={newSkill}
                   onChange={(e) => setNewSkill(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && addSkill()}
-                  className="flex-1 bg-white/5 border border-white/10 text-white placeholder:text-slate-500 px-3 py-2 text-sm focus:outline-none focus:border-[#e8ff47] transition-colors rounded-none"
+                  className="flex-1 bg-[#0a0a0a] border border-white/10 text-white placeholder:text-slate-500 px-3 py-2 text-sm focus:outline-none focus:border-[#e8ff47] transition-colors rounded-none"
                 />
                 <button
                   onClick={addSkill}
-                  className="bg-[#e8ff47] text-black hover:bg-[#bceb00] px-4 py-2 cursor-pointer transition-colors rounded-none"
+                  className="bg-[#e8ff47] text-black hover:bg-[#e8ff47]/90 px-4 py-2 cursor-pointer transition-colors rounded-none font-mono font-bold"
                 >
-                  <Plus className="size-4" />
+                  +
                 </button>
               </div>
-              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
+              
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
                 {skills.map((skill, index) => (
                   <div
                     key={skill.name + index}
-                    className="flex items-center justify-between rounded-none border border-white/5 bg-white/[0.02] px-3 py-2"
+                    className="flex items-center justify-between rounded-none border border-white/10 bg-[#0a0a0a] px-3 py-2"
                   >
                     <span className="text-white text-sm font-mono">{skill.name}</span>
                     <button
@@ -305,11 +438,20 @@ function SkillsGrid({ initialSkills }) {
                   </div>
                 ))}
               </div>
+
+              <div className="flex gap-3 mt-6 pt-4 border-t border-white/10">
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="flex-1 px-4 py-2 text-sm font-mono text-slate-400 border border-white/10 hover:text-white hover:border-white/20 transition-colors rounded-none"
+                >
+                  Done
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-    </BentoCard>
+    </>
   )
 }
 
