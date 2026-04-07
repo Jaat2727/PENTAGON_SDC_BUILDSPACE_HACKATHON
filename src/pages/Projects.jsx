@@ -22,9 +22,11 @@ export default function Projects() {
   const [search, setSearch]     = useState("");
   const [status, setStatus]     = useState("all"); // all | open | closed
   const [modalOpen, setModalOpen] = useState(false);
+  const [error, setError] = useState(null);
 
   const loadProjects = useCallback(async () => {
     setLoading(true);
+    setError(null);
 
     let query = supabase
       .from("projects")
@@ -35,7 +37,12 @@ export default function Projects() {
       query = query.eq("status", status);
     }
 
-    const { data } = await query;
+    const { data, error: loadError } = await query;
+    if (loadError) {
+      setError(loadError.message || "Failed to load projects.");
+      setLoading(false);
+      return;
+    }
 
     // reshape — flatten members for the card
     const shaped = (data || []).map((p) => ({
@@ -102,6 +109,12 @@ export default function Projects() {
       </div>
 
       {/* project grid */}
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-200">
+          {error}
+        </div>
+      )}
+
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (

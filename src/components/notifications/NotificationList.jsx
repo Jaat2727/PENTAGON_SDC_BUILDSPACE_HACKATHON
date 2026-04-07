@@ -22,6 +22,7 @@ export default function NotificationList() {
   const user = useAuthStore((s) => s.user);
   const [items, setItems]     = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const loadNotifications = useCallback(async () => {
     if (!user) return;
@@ -31,6 +32,12 @@ export default function NotificationList() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50);
+
+    if (loadError) {
+      setError(loadError.message || "Could not load notifications.");
+      setLoading(false);
+      return;
+    }
 
     setItems(data || []);
     setLoading(false);
@@ -68,6 +75,14 @@ export default function NotificationList() {
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="h-16 rounded-lg bg-slate-100 dark:bg-slate-800 animate-pulse" />
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-900/20 px-4 py-4 text-sm text-red-700 dark:text-red-200">
+        {error}
       </div>
     );
   }
