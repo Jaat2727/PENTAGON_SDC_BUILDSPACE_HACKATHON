@@ -7,13 +7,12 @@
 
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
-import ConnectionNotice from "./components/layout/ConnectionNotice";
+
+import Dashboard from "./pages/Dashboard";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Feed from "./pages/Feed";
 import Profile from "./pages/Profile";
-import Projects from "./pages/Projects";
-import ProjectDetailPage from "./pages/ProjectDetail";
 import Opportunities from "./pages/Opportunities";
 import Search from "./pages/Search";
 import Notifications from "./pages/Notifications";
@@ -21,7 +20,7 @@ import Settings from "./pages/Settings";
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-[#030712] text-slate-200 transition-colors duration-300 relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#030712] text-slate-200 transition-colors duration-300 relative">
       {/* Global background pattern */}
       <div className="fixed inset-0 cyber-grid opacity-[0.02] pointer-events-none" />
       
@@ -31,15 +30,15 @@ export default function App() {
       {/* Content */}
       <div className="relative z-10">
         <Navbar />
-        <ConnectionNotice />
+
 
         <Routes>
+          <Route path="/dashboard"       element={<Dashboard />} />
           <Route path="/"                element={<Landing />} />
           <Route path="/auth"            element={<Auth />} />
           <Route path="/feed"            element={<Feed />} />
+          <Route path="/profile"         element={<Profile />} />
           <Route path="/u/:username"     element={<Profile />} />
-          <Route path="/projects"        element={<Projects />} />
-          <Route path="/projects/:id"    element={<ProjectDetailPage />} />
           <Route path="/opportunities"   element={<Opportunities />} />
           <Route path="/search"          element={<Search />} />
           <Route path="/notifications"   element={<Notifications />} />

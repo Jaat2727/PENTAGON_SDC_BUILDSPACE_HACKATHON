@@ -1,482 +1,681 @@
-/*
-  Landing.jsx
-  -----------
-  Premium tech-savvy hero landing page for BuildSpace.
-  Features: animated particles, glowing orbs, terminal effects,
-  code animations, glassmorphic cards, and cinematic transitions.
-*/
+import { useState, useEffect, useRef } from "react"
+import { motion, useScroll, useTransform, useSpring, useMotionValue, AnimatePresence } from "framer-motion"
+import { Link } from "react-router-dom"
+import { Search, ArrowRight, GitBranch, Users, Zap, Code2, Trophy, Calendar, X } from "lucide-react"
 
-import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
-import {
-  HiOutlineUserGroup,
-  HiOutlineSparkles,
-  HiOutlineBriefcase,
-  HiOutlineLightningBolt,
-  HiOutlineCode,
-  HiOutlineGlobe,
-  HiOutlineTerminal,
-  HiOutlineCube,
-  HiOutlineChip,
-} from "react-icons/hi";
-import Button from "../components/ui/Button";
-import Badge from "../components/ui/Badge";
-
-/* ——— Data ——— */
-const pillars = [
-  {
-    icon: HiOutlineUserGroup,
-    title: "Developer Profiles",
-    desc: "Showcase your skills, tech stack, and projects with a profile built for developers.",
-    accent: "from-cyan-400 to-blue-500",
-    glow: "cyan",
-  },
-  {
-    icon: HiOutlineSparkles,
-    title: "Project Collaboration",
-    desc: "Find teammates, manage contributions, and ship projects together seamlessly.",
-    accent: "from-emerald-400 to-teal-500",
-    glow: "emerald",
-  },
-  {
-    icon: HiOutlineBriefcase,
-    title: "Opportunity Board",
-    desc: "Discover hackathons, open roles, and team openings from one unified dashboard.",
-    accent: "from-violet-400 to-purple-500",
-    glow: "violet",
-  },
-];
-
-const stats = [
-  { value: "Find Teams", label: "Skill-based matching", icon: HiOutlineUserGroup },
-  { value: "Real-time", label: "Live activity feed", icon: HiOutlineSparkles },
-  { value: "Open Source", label: "React + Supabase", icon: HiOutlineCode },
-];
-
-const journeySteps = [
-  {
-    num: "01",
-    title: "Build your profile",
-    text: "Show your skills, tech stack, and past projects so the right teammates can find you.",
-    icon: HiOutlineCode,
-    code: "user.create({ skills, projects })",
-  },
-  {
-    num: "02",
-    title: "Create or join projects",
-    text: "Post project ideas, define roles, invite collaborators, and track progress.",
-    icon: HiOutlineCube,
-    code: "project.addMember(user.id, 'lead')",
-  },
-  {
-    num: "03",
-    title: "Discover opportunities",
-    text: "Browse hackathon openings, project roles, and collaboration requests.",
-    icon: HiOutlineGlobe,
-    code: "opportunities.filter({ type: 'hackathon' })",
-  },
-];
-
-const feedPreview = [
-  { user: "Nisha", action: "created a Next.js + Supabase project", time: "2m ago", type: "project" },
-  { user: "Arjun", action: "posted an AI engineer role opening", time: "5m ago", type: "opportunity" },
-  { user: "Team GridFlow", action: "published a milestone update", time: "12m ago", type: "update" },
-  { user: "Priya", action: "joined as frontend developer", time: "18m ago", type: "join" },
-];
-
-const techStack = [
-  { name: "React", color: "cyan" },
-  { name: "Supabase", color: "emerald" },
-  { name: "Vite", color: "yellow" },
-  { name: "Tailwind", color: "cyan" },
-  { name: "PostgreSQL", color: "blue" },
-];
-
-/* ——— Animated Code Lines Component ——— */
-function AnimatedCode() {
-  const codeLines = [
-    { text: "const team = await findTeam({", delay: 0 },
-    { text: "  skills: ['react', 'node'],", delay: 200 },
-    { text: "  availability: 'immediate'", delay: 400 },
-    { text: "});", delay: 600 },
-    { text: "", delay: 800 },
-    { text: "await project.ship();", delay: 1000 },
-  ];
-
+// Noise overlay component
+function NoiseOverlay() {
   return (
-    <div className="font-mono text-sm space-y-1">
-      {codeLines.map((line, i) => (
-        <div
-          key={i}
-          className="animate-fade-up opacity-0"
-          style={{ animationDelay: `${line.delay + 500}ms`, animationFillMode: "forwards" }}
-        >
-          <span className="text-slate-600 mr-3 select-none">{i + 1}</span>
-          <span className="text-cyan-400">{line.text}</span>
-        </div>
-      ))}
-    </div>
-  );
+    <div
+      className="pointer-events-none absolute inset-0 z-0"
+      style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+        opacity: 0.03,
+      }}
+    />
+  )
 }
 
-/* ——— Floating Particles Background ——— */
-function ParticleField() {
-  const particles = Array.from({ length: 50 }, (_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    size: Math.random() * 3 + 1,
-    duration: Math.random() * 20 + 15,
-    delay: Math.random() * 10,
-  }));
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {particles.map((p) => (
-        <div
-          key={p.id}
-          className="absolute rounded-full bg-cyan-400/30"
-          style={{
-            left: `${p.x}%`,
-            top: `${p.y}%`,
-            width: `${p.size}px`,
-            height: `${p.size}px`,
-            animation: `particle-rise ${p.duration}s linear infinite`,
-            animationDelay: `${p.delay}s`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-/* ——— Main Component ——— */
-export default function Landing() {
-  const [visibleStats, setVisibleStats] = useState(false);
+// Magnetic cursor component
+function MagneticCursor() {
+  const cursorX = useMotionValue(-100)
+  const cursorY = useMotionValue(-100)
+  const springConfig = { stiffness: 500, damping: 28 }
+  const cursorXSpring = useSpring(cursorX, springConfig)
+  const cursorYSpring = useSpring(cursorY, springConfig)
+  const [isHovering, setIsHovering] = useState(false)
 
   useEffect(() => {
-    const timer = setTimeout(() => setVisibleStats(true), 800);
-    return () => clearTimeout(timer);
-  }, []);
+    const moveCursor = (e) => {
+      cursorX.set(e.clientX)
+      cursorY.set(e.clientY)
+    }
+
+    const handleMouseOver = (e) => {
+      const target = e.target
+      if (target.closest("a, button, [data-magnetic]")) {
+        setIsHovering(true)
+      }
+    }
+
+    const handleMouseOut = (e) => {
+      const target = e.target
+      if (target.closest("a, button, [data-magnetic]")) {
+        setIsHovering(false)
+      }
+    }
+
+    window.addEventListener("mousemove", moveCursor)
+    document.addEventListener("mouseover", handleMouseOver)
+    document.addEventListener("mouseout", handleMouseOut)
+
+    return () => {
+      window.removeEventListener("mousemove", moveCursor)
+      document.removeEventListener("mouseover", handleMouseOver)
+      document.removeEventListener("mouseout", handleMouseOut)
+    }
+  }, [cursorX, cursorY])
 
   return (
-    <div className="relative overflow-hidden bg-[#030712]">
+    <motion.div
+      className="pointer-events-none fixed top-0 left-0 z-[100] hidden md:block"
+      style={{
+        x: cursorXSpring,
+        y: cursorYSpring,
+        translateX: "-50%",
+        translateY: "-50%",
+      }}
+    >
+      <motion.div
+        className="bg-[#e8ff47]"
+        animate={{
+          width: isHovering ? 40 : 8,
+          height: isHovering ? 40 : 8,
+          opacity: isHovering ? 0.3 : 1,
+        }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        style={{ borderRadius: "50%" }}
+      />
+    </motion.div>
+  )
+}
 
-      {/* ══════ HERO SECTION ══════ */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Animated background */}
-        <div className="absolute inset-0 mesh-gradient" />
-        <div className="absolute inset-0 cyber-grid opacity-30" />
-        <ParticleField />
+// Command palette modal
+function CommandPalette({ isOpen, onClose }) {
+  const commands = [
+    { icon: Search, label: "Search projects...", shortcut: "↵" },
+    { icon: Users, label: "Find developers", shortcut: "D" },
+    { icon: Zap, label: "Browse opportunities", shortcut: "O" },
+    { icon: Code2, label: "Create new project", shortcut: "N" },
+    { icon: Trophy, label: "View hackathons", shortcut: "H" },
+  ]
 
-        {/* Floating orbs */}
-        <div className="floating-orb floating-orb-cyan w-[500px] h-[500px] top-[-10%] left-[-10%] animate-float" />
-        <div className="floating-orb floating-orb-blue w-[400px] h-[400px] bottom-[-5%] right-[-5%] animate-float-slow" />
-        <div className="floating-orb floating-orb-purple w-[300px] h-[300px] top-[40%] right-[20%] animate-float-fast" />
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") onClose()
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault()
+        onClose()
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("keydown", handleKeyDown)
+      document.body.style.overflow = "hidden"
+    }
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown)
+      document.body.style.overflow = ""
+    }
+  }, [isOpen, onClose])
 
-        {/* Scan line effect */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute w-full h-px bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent animate-scan-line" />
-        </div>
-
-        <div className="relative z-10 app-shell py-24 sm:py-32">
-          <div className="mx-auto max-w-5xl text-center">
-            {/* Status badge */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/5 px-4 py-2 text-xs font-semibold text-cyan-300 animate-fade-up backdrop-blur-sm mb-8">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
-              </span>
-              Collaboration Platform for Student Developers
-            </div>
-
-            {/* Main headline with gradient */}
-            <h1 className="font-display text-5xl sm:text-7xl lg:text-8xl font-bold tracking-tight leading-[1.05] animate-fade-up delay-100">
-              <span className="text-white">Build projects with</span>
-              <br />
-              <span className="text-gradient text-neon">the right people.</span>
-            </h1>
-
-            {/* Sub-headline */}
-            <p className="mx-auto mt-8 max-w-2xl text-lg sm:text-xl leading-relaxed text-slate-400 animate-fade-up delay-200 text-balance">
-              BuildSpace unifies developer profiles, team formation, and opportunity
-              discovery into a single professional platform.
-            </p>
-
-            {/* CTA buttons */}
-            <div className="mt-12 flex flex-wrap items-center justify-center gap-4 animate-fade-up delay-300">
-              <Link to="/auth">
-                <Button size="lg" className="group relative overflow-hidden">
-                  <span className="relative z-10 flex items-center gap-2">
-                    <HiOutlineLightningBolt className="w-5 h-5 group-hover:animate-wave" />
-                    Start Building
-                  </span>
-                </Button>
-              </Link>
-              <Link to="/projects">
-                <Button variant="secondary" size="lg" className="group">
-                  <HiOutlineTerminal className="w-5 h-5" />
-                  Explore Projects
-                </Button>
-              </Link>
-            </div>
-
-            {/* Tech stack */}
-            <div className="mt-10 flex items-center justify-center gap-3 flex-wrap animate-fade-up delay-400">
-              <span className="text-xs text-slate-500 mr-2">Built with</span>
-              {techStack.map((tech, i) => (
-                <Badge 
-                  key={tech.name} 
-                  color={tech.color}
-                  className={`animate-fade-up`}
-                  style={{ animationDelay: `${450 + i * 50}ms` }}
-                >
-                  {tech.name}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          {/* Code preview window */}
-          <div className="mt-16 mx-auto max-w-2xl animate-fade-up delay-500">
-            <div className="terminal shadow-2xl shadow-cyan-500/10">
-              <div className="terminal-header">
-                <div className="terminal-dot bg-red-500/80" />
-                <div className="terminal-dot bg-yellow-500/80" />
-                <div className="terminal-dot bg-green-500/80" />
-                <span className="ml-3 text-xs text-slate-500 font-mono">buildspace.js</span>
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="fixed left-1/2 top-[20%] z-[70] w-full max-w-xl -translate-x-1/2"
+          >
+            <div className="border border-[#e8ff47]/30 bg-[#0a0a0a]/95 backdrop-blur-md">
+              <div className="flex items-center gap-3 border-b border-[#1f1f1f] px-4 py-3">
+                <Search className="h-5 w-5 text-[#666]" />
+                <input
+                  type="text"
+                  placeholder="Search BuildSpace..."
+                  className="flex-1 bg-transparent text-sm text-white placeholder:text-[#666] focus:outline-none"
+                  autoFocus
+                />
+                <button onClick={onClose} className="text-[#666] hover:text-white cursor-pointer">
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              <div className="terminal-body p-6">
-                <AnimatedCode />
-                <div className="mt-4 flex items-center gap-2 text-emerald-400">
-                  <span className="animate-blink">|</span>
-                  <span className="text-xs opacity-60">Ready to collaborate...</span>
-                </div>
+              <div className="p-2">
+                {commands.map((cmd, i) => (
+                  <motion.button
+                    key={cmd.label}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-left text-sm text-[#999] transition-colors hover:bg-[#1f1f1f] hover:text-white"
+                  >
+                    <cmd.icon className="h-4 w-4" />
+                    <span className="flex-1">{cmd.label}</span>
+                    <kbd className="bg-[#1f1f1f] px-1.5 py-0.5 font-mono text-xs text-[#666]">{cmd.shortcut}</kbd>
+                  </motion.button>
+                ))}
               </div>
             </div>
-          </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  )
+}
+
+// 3D Terminal component for hero
+function Terminal3D({ scrollProgress }) {
+  const rotateX = useTransform(scrollProgress, [0, 1], [60, 0])
+  const rotateZ = useTransform(scrollProgress, [0, 1], [-45, 0])
+  const scale = useTransform(scrollProgress, [0, 1], [1, 0.85])
+
+  const lines = [
+    { prefix: "$", text: "buildspace init my-project", color: "text-[#e8ff47]" },
+    { prefix: ">", text: "Initializing project...", color: "text-[#666]" },
+    { prefix: ">", text: "Found 3 collaborators nearby", color: "text-[#666]" },
+    { prefix: "$", text: "buildspace team add @sarah @alex @mike", color: "text-[#e8ff47]" },
+    { prefix: ">", text: "Team synced successfully ✓", color: "text-green-500" },
+    { prefix: "$", text: "buildspace deploy --prod", color: "text-[#e8ff47]" },
+    { prefix: ">", text: "Deploying to buildspace.dev...", color: "text-[#666]" },
+    { prefix: ">", text: "Live at buildspace.dev/my-project ✓", color: "text-green-500" },
+  ]
+
+  return (
+    <div className="perspective-[1000px] hidden md:block">
+      <motion.div
+        style={{ rotateX, rotateZ, scale }}
+        className="w-[500px] border border-[#1f1f1f] bg-[#0a0a0a] p-6 shadow-2xl"
+      >
+        <div className="mb-4 flex items-center gap-2">
+          <div className="h-3 w-3 bg-[#ff5f57]" />
+          <div className="h-3 w-3 bg-[#febc2e]" />
+          <div className="h-3 w-3 bg-[#28c840]" />
+          <span className="ml-4 font-mono text-xs text-[#666]">terminal</span>
         </div>
-
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#030712] to-transparent" />
-      </section>
-
-      {/* ══════ STATS BAR ══════ */}
-      <section className="relative z-10 -mt-16 app-shell">
-        <div className="grid gap-4 sm:grid-cols-3">
-          {stats.map((item, i) => (
-            <div
-              key={item.label}
-              className={`card p-6 text-center group hover-glow ${visibleStats ? 'animate-fade-up' : 'opacity-0'}`}
-              style={{ animationDelay: `${i * 100}ms` }}
+        <div className="space-y-2 font-mono text-sm">
+          {lines.map((line, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 + i * 0.15 }}
+              className="flex gap-2"
             >
-              <item.icon className="w-8 h-8 text-cyan-400 mx-auto mb-3 group-hover:scale-110 transition-transform" />
-              <p className="text-2xl font-display font-bold text-gradient">{item.value}</p>
-              <p className="mt-1 text-sm text-slate-400">{item.label}</p>
-            </div>
+              <span className="text-[#666]">{line.prefix}</span>
+              <span className={line.color}>{line.text}</span>
+            </motion.div>
           ))}
-        </div>
-      </section>
-
-      {/* ══════ FEATURES ══════ */}
-      <section className="app-shell py-32">
-        <div className="text-center mb-20">
-          <div className="inline-flex items-center gap-2 text-cyan-400 text-sm font-semibold mb-4">
-            <HiOutlineChip className="w-4 h-4" />
-            <span>CORE FEATURES</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[#666]">$</span>
+            <span className="h-4 w-2 animate-pulse bg-[#e8ff47]" />
           </div>
-          <h2 className="font-display text-4xl sm:text-5xl font-bold text-white text-balance">
-            Everything you need to
-            <span className="text-gradient"> collaborate</span>
-          </h2>
-          <p className="mt-6 text-slate-400 max-w-xl mx-auto text-lg">
-            From profile to production — complete tools for finding teammates,
-            managing projects, and discovering opportunities.
-          </p>
         </div>
+      </motion.div>
+    </div>
+  )
+}
 
-        <div className="grid gap-6 sm:grid-cols-3">
-          {pillars.map((item, i) => (
-            <div
-              key={item.title}
-              className="card p-8 text-center group hover-lift animate-fade-up"
-              style={{ animationDelay: `${i * 150}ms` }}
-            >
-              {/* Glow effect */}
-              <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${item.accent} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
-              
-              {/* Icon */}
-              <div className={`relative mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${item.accent} shadow-lg shadow-${item.glow}-500/25 mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                <item.icon className="w-8 h-8 text-white" />
-              </div>
-              
-              <h3 className="text-xl font-display font-semibold text-white mb-3">{item.title}</h3>
-              <p className="text-sm leading-relaxed text-slate-400">{item.desc}</p>
-            </div>
-          ))}
+// Bento box with cursor flashlight effect
+function BentoBox({ children, className, index }) {
+  const ref = useRef(null)
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+
+  const handleMouseMove = (e) => {
+    if (!ref.current) return
+    const rect = ref.current.getBoundingClientRect()
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    })
+  }
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: false, amount: 0.2 }}
+      transition={{
+        type: "spring",
+        stiffness: 200,
+        damping: 25,
+        delay: index * 0.1,
+      }}
+      onMouseMove={handleMouseMove}
+      className={`group relative min-h-[180px] overflow-visible border border-[#1f1f1f] bg-[#0a0a0a] p-6 ${className}`}
+    >
+      <div
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        style={{
+          background: `radial-gradient(300px circle at ${mousePos.x}px ${mousePos.y}px, rgba(232, 255, 71, 0.06), transparent 60%)`,
+        }}
+      />
+      {children}
+    </motion.div>
+  )
+}
+
+// Code diff simulation
+function CodeDiff() {
+  const lines = [
+    { type: "context", text: "  const team = useTeam();" },
+    { type: "removed", text: "-  const [members, setMembers] = useState([]);" },
+    { type: "added", text: "+  const { members, addMember } = useCollaboration();" },
+    { type: "context", text: "" },
+    { type: "removed", text: "-  // Manual sync required" },
+    { type: "added", text: "+  // Real-time sync enabled" },
+    { type: "added", text: "+  useEffect(() => subscribeToChanges(), []);" },
+  ]
+
+  return (
+    <div className="mt-4 font-mono text-xs">
+      {lines.map((line, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, x: -10 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3 + i * 0.1 }}
+          className={`px-2 py-0.5 ${
+            line.type === "added"
+              ? "bg-green-500/10 text-green-400"
+              : line.type === "removed"
+                ? "bg-red-500/10 text-red-400"
+                : "text-[#666]"
+          }`}
+        >
+          {line.text || " "}
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
+// Radar chart for skills
+function SkillRadar() {
+  const skills = [
+    { name: "React", value: 0.9, angle: 0 },
+    { name: "Node", value: 0.7, angle: 60 },
+    { name: "Python", value: 0.6, angle: 120 },
+    { name: "Design", value: 0.8, angle: 180 },
+    { name: "DevOps", value: 0.5, angle: 240 },
+    { name: "Mobile", value: 0.7, angle: 300 },
+  ]
+
+  const size = 120
+  const center = size / 2
+  const maxRadius = size / 2 - 20
+
+  const getPoint = (angle, value) => {
+    const rad = (angle - 90) * (Math.PI / 180)
+    return {
+      x: center + Math.cos(rad) * maxRadius * value,
+      y: center + Math.sin(rad) * maxRadius * value,
+    }
+  }
+
+  const points = skills.map((s) => getPoint(s.angle, s.value))
+  const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ") + " Z"
+
+  return (
+    <div className="flex items-center justify-center py-4">
+      <svg width={size} height={size}>
+        {[0.25, 0.5, 0.75, 1].map((level) => (
+          <polygon
+            key={level}
+            points={skills.map((s) => {
+              const p = getPoint(s.angle, level)
+              return `${p.x},${p.y}`
+            }).join(" ")}
+            fill="none"
+            stroke="#1f1f1f"
+            strokeWidth="1"
+          />
+        ))}
+        {skills.map((s) => {
+          const p = getPoint(s.angle, 1)
+          return <line key={s.name} x1={center} y1={center} x2={p.x} y2={p.y} stroke="#1f1f1f" strokeWidth="1" />
+        })}
+        <motion.polygon
+          initial={{ opacity: 0, scale: 0 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.5, type: "spring" }}
+          points={pathD.replace(/[MLZ]/g, "").trim()}
+          fill="rgba(232, 255, 71, 0.2)"
+          stroke="#e8ff47"
+          strokeWidth="2"
+        />
+        {skills.map((s) => {
+          const p = getPoint(s.angle, 1.25)
+          return (
+            <text key={s.name} x={p.x} y={p.y} fill="#666" fontSize="8" textAnchor="middle" dominantBaseline="middle">
+              {s.name}
+            </text>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+
+// Scrolling hackathon tags
+function HackathonTags() {
+  const tags = ["ETHGlobal", "HackMIT", "TreeHacks", "CalHacks", "PennApps", "HackNY", "MHacks", "HackGT"]
+
+  return (
+    <div className="relative mt-4 overflow-hidden">
+      <motion.div
+        animate={{ x: [0, -400] }}
+        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+        className="flex gap-2"
+      >
+        {[...tags, ...tags].map((tag, i) => (
+          <span key={i} className="shrink-0 border border-[#1f1f1f] bg-[#040404] px-3 py-1 font-mono text-xs text-[#999]">
+            {tag}
+          </span>
+        ))}
+      </motion.div>
+    </div>
+  )
+}
+
+// Live feed card
+function FeedCard({ item, index, scrollProgress }) {
+  const y = useTransform(scrollProgress, [(index * 0.15), (index * 0.15) + 0.2], [0, -300])
+  const opacity = useTransform(scrollProgress, [(index * 0.15), (index * 0.15) + 0.15], [1, 0])
+  const scale = useTransform(scrollProgress, [(index * 0.15), (index * 0.15) + 0.2], [1, 0.9])
+
+  return (
+    <motion.div
+      style={{ y, opacity, scale, zIndex: 10 - index }}
+      className="absolute left-1/2 w-full max-w-md -translate-x-1/2 border border-[#1f1f1f] bg-[#0a0a0a] p-6"
+    >
+      <div className="mb-3 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center bg-[#1f1f1f] font-mono text-sm text-[#e8ff47]">
+          {item.avatar}
         </div>
-      </section>
+        <div>
+          <div className="font-medium text-white">{item.name}</div>
+          <div className="text-xs text-[#666]">{item.time}</div>
+        </div>
+      </div>
+      <p className="text-sm text-[#999]">{item.content}</p>
+      <div className="mt-4 flex gap-2">
+        {item.tags.map((tag) => (
+          <span key={tag} className="bg-[#1f1f1f] px-2 py-0.5 text-xs text-[#666]">
+            {tag}
+          </span>
+        ))}
+      </div>
+    </motion.div>
+  )
+}
 
-      {/* ══════ HOW IT WORKS ══════ */}
-      <section className="relative py-32 overflow-hidden">
-        {/* Background glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-cyan-500/5 blur-[150px]" />
+export default function LandingPage() {
+  const [cmdOpen, setCmdOpen] = useState(false)
+  const heroRef = useRef(null)
+  const feedRef = useRef(null)
 
-        <div className="app-shell relative z-10">
-          <div className="text-center mb-20">
-            <div className="inline-flex items-center gap-2 text-cyan-400 text-sm font-semibold mb-4">
-              <HiOutlineTerminal className="w-4 h-4" />
-              <span>HOW IT WORKS</span>
-            </div>
-            <h2 className="font-display text-4xl sm:text-5xl font-bold text-white">
-              From idea to <span className="text-gradient">shipped project</span>
-            </h2>
-            <p className="mt-6 text-slate-400 text-lg">Three steps to start collaborating</p>
-          </div>
+  const { scrollYProgress: heroProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end end"],
+    layoutEffect: false,
+  })
 
-          <div className="max-w-4xl mx-auto space-y-6">
-            {journeySteps.map((step, i) => (
-              <div
-                key={step.num}
-                className="card p-8 group hover-lift animate-fade-up"
-                style={{ animationDelay: `${i * 150}ms` }}
+  const { scrollYProgress: feedProgress } = useScroll({
+    target: feedRef,
+    offset: ["start start", "end end"],
+    layoutEffect: false,
+  })
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault()
+        setCmdOpen(true)
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [])
+
+  const feedItems = [
+    {
+      avatar: "SK",
+      name: "Sarah Kim",
+      time: "2m ago",
+      content: "Just shipped our AI-powered code review bot. Looking for frontend devs to help build the dashboard!",
+      tags: ["React", "AI", "Open Source"],
+    },
+    {
+      avatar: "AJ",
+      name: "Alex Johnson",
+      time: "15m ago",
+      content: "Our hackathon project won first place! Now turning it into a real startup. DMs open for co-founders.",
+      tags: ["Startup", "Web3", "Hiring"],
+    },
+    {
+      avatar: "MP",
+      name: "Maya Patel",
+      time: "1h ago",
+      content: "Released v2.0 of our design system. 50+ components, fully accessible, and open source.",
+      tags: ["Design", "Components", "OSS"],
+    },
+    {
+      avatar: "TC",
+      name: "Tom Chen",
+      time: "3h ago",
+      content: "Building a new devtools startup. Looking for passionate engineers who want to shape the future of DX.",
+      tags: ["DevTools", "Startup", "Remote"],
+    },
+  ]
+
+  return (
+    <div className="min-h-screen bg-[#040404] text-white font-sans">
+      <NoiseOverlay />
+      <MagneticCursor />
+      <CommandPalette isOpen={cmdOpen} onClose={() => setCmdOpen(false)} />
+
+      {/* Hero Section - 200vh scroll-jacked */}
+      <section ref={heroRef} className="relative h-[200vh] -mt-16">
+        <div className="sticky top-0 flex h-screen items-center overflow-hidden">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-12 px-6 pt-14">
+            <div className="max-w-xl">
+              <motion.h1
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, type: "spring" }}
+                className="text-5xl font-bold leading-[1.1] tracking-tight md:text-7xl"
               >
-                <div className="flex flex-col sm:flex-row items-start gap-6">
-                  {/* Step number */}
-                  <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/25 group-hover:scale-110 transition-transform">
-                    <span className="text-white font-display font-bold text-lg">{step.num}</span>
-                  </div>
+                The platform for developers who{" "}
+                <span className="text-[#e8ff47]">build together.</span>
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.8 }}
+                className="mt-6 text-lg text-[#999]"
+              >
+                Connect with ambitious developers. Ship projects faster. Turn ideas into reality with the right team.
+              </motion.p>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.8 }}
+                className="mt-8 flex items-center gap-4"
+              >
+                <Link
+                  to="/auth"
+                  className="group flex items-center gap-2 bg-[#e8ff47] px-6 py-3 font-medium text-black transition-all hover:gap-3"
+                  data-magnetic
+                >
+                  Start Building
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+                <Link
+                  to="/projects"
+                  className="border border-[#1f1f1f] px-6 py-3 text-sm text-white transition-colors hover:bg-[#0a0a0a]"
+                  data-magnetic
+                >
+                  View Projects
+                </Link>
+              </motion.div>
+            </div>
+            <Terminal3D scrollProgress={heroProgress} />
+          </div>
+        </div>
+      </section>
 
-                  <div className="flex-1">
-                    <h3 className="text-xl font-display font-semibold text-white mb-2">{step.title}</h3>
-                    <p className="text-slate-400 leading-relaxed mb-4">{step.text}</p>
-                    
-                    {/* Code snippet */}
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800/50 border border-cyan-500/10 font-mono text-sm">
-                      <span className="text-cyan-400">&gt;</span>
-                      <span className="text-slate-300">{step.code}</span>
-                    </div>
-                  </div>
+      {/* Bento Grid Features */}
+      <section className="relative mx-auto min-h-screen max-w-6xl overflow-visible px-6 py-32 z-10 bg-[#040404]">
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, amount: 0.2 }}
+          className="mb-12 text-center text-4xl font-bold tracking-tight md:text-5xl"
+        >
+          Everything you need to{" "}
+          <span className="text-[#e8ff47]">collaborate</span>
+        </motion.h2>
 
-                  <step.icon className="hidden sm:block w-8 h-8 text-cyan-400/30 flex-shrink-0 group-hover:text-cyan-400/60 transition-colors" />
-                </div>
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: false, amount: 0.1 }}
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.1,
+              },
+            },
+          }}
+          className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:grid-rows-2"
+        >
+          <BentoBox className="lg:col-span-2" index={0}>
+            <div className="flex items-center gap-2 text-[#e8ff47]">
+              <GitBranch className="h-5 w-5" />
+              <span className="font-mono text-xs uppercase tracking-wider">Project Collaboration</span>
+            </div>
+            <h3 className="mt-4 text-xl font-semibold text-white">Real-time code collaboration</h3>
+            <p className="mt-2 text-sm text-[#666]">Work together seamlessly with live cursors, instant sync, and smart conflict resolution.</p>
+            <CodeDiff />
+          </BentoBox>
+
+          <BentoBox className="lg:row-span-2" index={1}>
+            <div className="flex items-center gap-2 text-[#e8ff47]">
+              <Users className="h-5 w-5" />
+              <span className="font-mono text-xs uppercase tracking-wider">Developer Profiles</span>
+            </div>
+            <h3 className="mt-4 text-xl font-semibold text-white">Skill-based matching</h3>
+            <p className="mt-2 text-sm text-[#666]">Find collaborators with complementary skills.</p>
+            <SkillRadar />
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-[#666]">React</span>
+                <span className="text-[#e8ff47]">Expert</span>
               </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-[#666]">TypeScript</span>
+                <span className="text-[#999]">Advanced</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-[#666]">Node.js</span>
+                <span className="text-[#999]">Advanced</span>
+              </div>
+            </div>
+          </BentoBox>
+
+          <BentoBox index={2}>
+            <div className="flex items-center gap-2 text-[#e8ff47]">
+              <Calendar className="h-5 w-5" />
+              <span className="font-mono text-xs uppercase tracking-wider">Opportunity Board</span>
+            </div>
+            <h3 className="mt-4 text-lg font-semibold text-white">Find your next hackathon</h3>
+            <p className="mt-2 text-xs text-[#666]">Browse upcoming events and competitions.</p>
+            <HackathonTags />
+          </BentoBox>
+
+          <BentoBox index={3}>
+            <div className="flex items-center gap-2 text-[#e8ff47]">
+              <Zap className="h-5 w-5" />
+              <span className="font-mono text-xs uppercase tracking-wider">Quick Stats</span>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-2xl font-bold text-white">12K+</div>
+                <div className="text-xs text-[#666]">Active developers</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-white">3.2K</div>
+                <div className="text-xs text-[#666]">Projects shipped</div>
+              </div>
+            </div>
+          </BentoBox>
+        </motion.div>
+      </section>
+
+      {/* 3D Stacked Live Feed - 300vh */}
+      <section ref={feedRef} className="relative h-[300vh] bg-[#040404]">
+        <div className="sticky top-0 flex h-screen flex-col items-center justify-center overflow-hidden px-6">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-12 text-center text-4xl font-bold tracking-tight md:text-5xl"
+          >
+            What's happening
+            <span className="ml-2 inline-block h-6 w-0.5 animate-pulse bg-[#e8ff47]" />
+          </motion.h2>
+
+          <div className="relative h-64 w-full max-w-md">
+            {feedItems.map((item, i) => (
+              <FeedCard key={i} item={item} index={i} scrollProgress={feedProgress} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* ══════ LIVE FEED PREVIEW ══════ */}
-      <section className="app-shell pb-32">
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 text-cyan-400 text-sm font-semibold mb-4">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
-            </span>
-            <span>LIVE ACTIVITY</span>
-          </div>
-          <h2 className="font-display text-4xl sm:text-5xl font-bold text-white">
-            See what the community is
-            <span className="text-gradient"> building</span>
-          </h2>
-        </div>
-
-        <div className="max-w-3xl mx-auto">
-          <div className="terminal shadow-2xl shadow-cyan-500/10">
-            <div className="terminal-header">
-              <div className="terminal-dot bg-red-500/80" />
-              <div className="terminal-dot bg-yellow-500/80" />
-              <div className="terminal-dot bg-green-500/80" />
-              <span className="ml-3 text-xs text-slate-500 font-mono">activity-feed.log</span>
-              <span className="ml-auto text-xs text-cyan-400 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-soft-pulse" />
-                Live
-              </span>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {feedPreview.map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-4 rounded-xl bg-slate-800/30 border border-cyan-500/5 px-5 py-4 animate-fade-up group hover:border-cyan-500/20 transition-all"
-                  style={{ animationDelay: `${i * 150}ms` }}
-                >
-                  <div className="w-2 h-2 rounded-full bg-cyan-400 mt-2 flex-shrink-0 animate-soft-pulse" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-slate-300">
-                      <span className="font-semibold text-cyan-300">{item.user}</span>{" "}
-                      {item.action}
-                    </p>
-                    <p className="text-xs text-slate-600 mt-1 font-mono">{item.time}</p>
-                  </div>
-                  <Badge 
-                    color={item.type === 'project' ? 'cyan' : item.type === 'opportunity' ? 'yellow' : item.type === 'join' ? 'green' : 'slate'} 
-                    className="text-[10px] opacity-60 group-hover:opacity-100 transition-opacity"
-                  >
-                    {item.type}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════ CTA FOOTER ══════ */}
-      <section className="relative py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-cyan-600/5 to-transparent" />
-        <div className="floating-orb floating-orb-cyan w-[600px] h-[600px] bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2" />
-        <div className="absolute inset-0 cyber-grid opacity-20" />
-
-        <div className="app-shell relative z-10 text-center">
-          <div className="inline-flex items-center gap-2 text-cyan-400 text-sm font-semibold mb-6 animate-fade-up">
-            <HiOutlineLightningBolt className="w-4 h-4" />
-            <span>GET STARTED</span>
-          </div>
-          
-          <h2 className="font-display text-4xl sm:text-6xl font-bold text-white mb-6 animate-fade-up delay-100 text-balance">
-            Ready to find your <span className="text-gradient text-neon">dream team</span>?
-          </h2>
-          
-          <p className="text-slate-400 max-w-lg mx-auto mb-10 text-lg animate-fade-up delay-200">
-            Join BuildSpace today and collaborate with student developers across the country.
-          </p>
-          
-          <div className="animate-fade-up delay-300">
-            <Link to="/auth">
-              <Button size="lg" className="group">
-                <HiOutlineLightningBolt className="w-5 h-5 group-hover:animate-wave" />
-                Get Started Free
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════ FOOTER ══════ */}
-      <footer className="border-t border-cyan-500/10 py-10 relative">
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent" />
-        <div className="app-shell relative flex flex-col sm:flex-row items-center justify-between gap-6 text-sm text-slate-500">
-          <p className="flex items-center gap-2">
-            <span className="text-gradient font-display font-semibold text-lg">BuildSpace</span>
-            <span className="text-slate-600">|</span>
-            <span>Built for IIT Madras SDC Hack Week 2026</span>
-          </p>
-          <div className="flex items-center gap-6">
-            <Link to="/projects" className="hover:text-cyan-400 transition-colors">Projects</Link>
-            <Link to="/opportunities" className="hover:text-cyan-400 transition-colors">Opportunities</Link>
-            <a
-              href="https://github.com/Jaat2727/PENTAGON_SDC_BUILDSPACE_HACKATHON"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-cyan-400 transition-colors"
+      {/* CTA Section */}
+      <section className="border-t border-[#1f1f1f] py-32 bg-[#040404]">
+        <div className="mx-auto max-w-2xl px-6 text-center">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-4xl font-bold tracking-tight md:text-5xl"
+          >
+            Ready to build{" "}
+            <span className="text-[#e8ff47]">something great?</span>
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="mt-6 text-lg text-[#999]"
+          >
+            Join thousands of developers building the future together.
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="mt-8"
+          >
+            <Link
+              to="/auth"
+              className="inline-flex items-center gap-2 bg-[#e8ff47] px-8 py-4 text-lg font-medium text-black transition-opacity hover:opacity-90"
+              data-magnetic
             >
-              GitHub
-            </a>
-          </div>
+              Get Started Free
+              <ArrowRight className="h-5 w-5" />
+            </Link>
+          </motion.div>
         </div>
-      </footer>
+      </section>
     </div>
-  );
+  )
 }
