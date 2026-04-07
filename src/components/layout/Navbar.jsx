@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FiSearch, FiBell, FiSettings, FiUser } from "react-icons/fi";
+import useAuthStore from "../../store/authStore";
 
 const NAV_LINKS = [
   { id: "home", label: "Home", path: "/" },
@@ -12,8 +13,12 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Authentication state
+  const user = useAuthStore((s) => s.user);
+  const signOut = useAuthStore((s) => s.signOut);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const isLoggedIn = !!user;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -21,17 +26,9 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Check for authentication (replace with actual auth logic)
-  useEffect(() => {
-    // For demo purposes, simulate checking localStorage for auth token
-    const authToken = localStorage.getItem('authToken');
-    setIsLoggedIn(!!authToken);
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    setIsLoggedIn(false);
-    // You can add redirect logic here if needed
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
   };
 
   return (
