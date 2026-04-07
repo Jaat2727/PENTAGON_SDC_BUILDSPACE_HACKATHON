@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BuildSpace | Developer Collaboration Platform</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>BuildSpace</h1>
+        <p class="subtitle">Developer Profiles • Team Formation • Opportunities</p>
+      </div>
+      <button id="themeToggle" class="btn ghost" type="button" aria-label="Toggle dark mode">
+        Toggle Theme
+      </button>
+    </header>
+
+    <main class="layout">
+      <section class="panel" id="profilePanel">
+        <h2>Developer Profile</h2>
+        <form id="profileForm" class="stack">
+          <label>
+            Name
+            <input required name="name" placeholder="Alex Johnson" />
+          </label>
+          <label>
+            Headline
+            <input name="headline" placeholder="Full-stack student developer" />
+          </label>
+          <label>
+            Skills (comma separated)
+            <input name="skills" placeholder="React, Node.js, UI/UX" />
+          </label>
+          <label>
+            Interests
+            <input name="interests" placeholder="Open-source, hackathons, AI" />
+          </label>
+          <label>
+            Featured Project
+            <input name="featuredProject" placeholder="Campus Community App" />
+          </label>
+          <button class="btn" type="submit">Save Profile</button>
+        </form>
+        <article id="profileCard" class="card empty">
+          Fill your profile to get discovered by teammates.
+        </article>
+      </section>
+
+      <section class="panel" id="projectPanel">
+        <h2>Projects & Team Formation</h2>
+        <form id="projectForm" class="stack">
+          <label>
+            Project Name
+            <input required name="title" placeholder="SkillSwap" />
+          </label>
+          <label>
+            Description
+            <textarea required name="description" rows="3" placeholder="A peer learning platform for students"></textarea>
+          </label>
+          <label>
+            Tech Stack
+            <input name="techStack" placeholder="Next.js, Supabase, Tailwind" />
+          </label>
+          <label>
+            Team Need
+            <input name="teamNeed" placeholder="Need 1 UI designer + 1 backend dev" />
+          </label>
+          <button class="btn" type="submit">Create Project</button>
+        </form>
+        <div id="projectList" class="list"></div>
+      </section>
+
+      <section class="panel" id="opportunityPanel">
+        <h2>Opportunity Board</h2>
+        <form id="opportunityForm" class="stack">
+          <label>
+            Opportunity Title
+            <input required name="title" placeholder="Hackathon teammates needed" />
+          </label>
+          <label>
+            Type
+            <select name="type">
+              <option>Looking for teammates</option>
+              <option>Hiring for project role</option>
+              <option>Hackathon team opening</option>
+            </select>
+          </label>
+          <label>
+            Description
+            <textarea required name="description" rows="3" placeholder="Need frontend dev for 48hr AI sprint"></textarea>
+          </label>
+          <button class="btn" type="submit">Post Opportunity</button>
+        </form>
+        <div id="opportunityList" class="list"></div>
+      </section>
+
+      <section class="panel wide" id="feedPanel">
+        <div class="feed-header">
+          <h2>Interactive Community Feed</h2>
+          <label class="search-wrap">
+            Search Feed
+            <input id="searchInput" placeholder="Filter by skills, role, project..." />
+          </label>
+        </div>
+        <div id="feedList" class="list feed"></div>
+      </section>
+    </main>
+
+    <template id="itemTemplate">
+      <article class="card">
+        <h3 class="item-title"></h3>
+        <p class="item-meta"></p>
+        <p class="item-body"></p>
+        <small class="item-time"></small>
+      </article>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
