@@ -12,6 +12,7 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Authentication state
   const location = useLocation();
 
   useEffect(() => {
@@ -19,6 +20,19 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Check for authentication (replace with actual auth logic)
+  useEffect(() => {
+    // For demo purposes, simulate checking localStorage for auth token
+    const authToken = localStorage.getItem('authToken');
+    setIsLoggedIn(!!authToken);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    setIsLoggedIn(false);
+    // You can add redirect logic here if needed
+  };
 
   return (
     <nav
@@ -35,7 +49,9 @@ export default function Navbar() {
 
       {/* 2. CENTER SECTION - Links */}
       <div className="hidden md:flex h-full relative items-center gap-8">
-        {NAV_LINKS.map((link) => {
+        {NAV_LINKS
+          .filter(link => !(isLoggedIn && link.id === 'home')) // Hide Home when logged in
+          .map((link) => {
           // Active state logic
           const isActive = link.path === '/' ? location.pathname === '/' : location.pathname.startsWith(link.path);
           
@@ -96,30 +112,44 @@ export default function Navbar() {
           <FiSettings className="w-5 h-5" />
         </Link>
 
-        {/* Profile */}
-        <Link 
-          to="/profile"
-          className="text-[#888888] hover:text-white transition-colors p-1.5 flex items-center justify-center rounded-none"
-          title="Profile"
-        >
-          <FiUser className="w-5 h-5" />
-        </Link>
+        {/* Profile - Show only when logged in */}
+        {isLoggedIn && (
+          <Link 
+            to="/profile"
+            className="text-[#888888] hover:text-white transition-colors p-1.5 flex items-center justify-center rounded-none"
+            title="Profile"
+          >
+            <FiUser className="w-5 h-5" />
+          </Link>
+        )}
 
-        {/* Login Button */}
-        <Link 
-          to="/auth"
-          className="px-4 h-9 flex items-center justify-center text-sm font-medium text-white hover:text-[#e8ff47] transition-colors rounded-none border border-[#1f1f1f] hover:border-[#e8ff47]"
-        >
-          Login
-        </Link>
+        {/* Authentication Section */}
+        {isLoggedIn ? (
+          // Logout Button (when logged in)
+          <button
+            onClick={handleLogout}
+            className="px-4 h-9 flex items-center justify-center text-sm font-medium text-white hover:text-[#e8ff47] transition-colors rounded-none border border-[#1f1f1f] hover:border-[#e8ff47]"
+          >
+            Logout
+          </button>
+        ) : (
+          // Login/Signup Buttons (when not logged in)
+          <>
+            <Link 
+              to="/auth"
+              className="px-4 h-9 flex items-center justify-center text-sm font-medium text-white hover:text-[#e8ff47] transition-colors rounded-none border border-[#1f1f1f] hover:border-[#e8ff47]"
+            >
+              Login
+            </Link>
 
-        {/* Signup Button */}
-        <Link 
-          to="/auth?mode=signup"
-          className="px-4 h-9 flex items-center justify-center text-sm font-bold text-black bg-[#e8ff47] hover:bg-[#e8ff47]/90 transition-colors rounded-none"
-        >
-          Sign Up
-        </Link>
+            <Link 
+              to="/auth?mode=signup"
+              className="px-4 h-9 flex items-center justify-center text-sm font-bold text-black bg-[#e8ff47] hover:bg-[#e8ff47]/90 transition-colors rounded-none"
+            >
+              Sign Up
+            </Link>
+          </>
+        )}
       </div>
     </nav>
   );

@@ -1,8 +1,11 @@
-import { useState, useMemo, useRef, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { useState, useMemo, useRef } from "react"
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion"
 import { Plus, Search, ChevronDown, X, Compass, Bookmark, User, TrendingUp, Users, ExternalLink, ArrowLeft } from "lucide-react"
+import { useBookmarks } from "../hooks/useBookmarks"
 
 // --- Sample Data ---
+const CURRENT_USER_ID = "current_user"
+
 const sampleProjects = [
   {
     id: "1",
@@ -49,6 +52,34 @@ const sampleProjects = [
     status: "closed",
     team: [
       { user_id: "m9", profiles: { display_name: "James Brown" }, role: "owner" },
+    ],
+  },
+]
+
+// User's own projects
+const myProjects = [
+  {
+    id: "my1",
+    title: "BuildSpace Platform",
+    description: "A developer collaboration platform to find teammates and launch projects together.",
+    techStack: ["React", "Vite", "Supabase", "Tailwind"],
+    status: "open",
+    owner_id: CURRENT_USER_ID,
+    repo_url: "https://github.com/me/buildspace",
+    team: [
+      { user_id: CURRENT_USER_ID, profiles: { display_name: "You", username: "me" }, role: "owner" },
+      { user_id: "m10", profiles: { display_name: "Partner Dev" }, role: "member" },
+    ],
+  },
+  {
+    id: "my2",
+    title: "CLI Task Manager",
+    description: "A terminal-based task manager with vim keybindings and cloud sync.",
+    techStack: ["Go", "SQLite", "Redis"],
+    status: "open",
+    owner_id: CURRENT_USER_ID,
+    team: [
+      { user_id: CURRENT_USER_ID, profiles: { display_name: "You" }, role: "owner" },
     ],
   },
 ]
@@ -201,9 +232,71 @@ function ProjectRightSidebar({ project }) {
   )
 }
 
+// 3D Tilt Card Component
+function TiltCard({ children, className = "" }) {
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
+
+  const mouseXSpring = useSpring(x)
+  const mouseYSpring = useSpring(y)
+
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["10deg", "-10deg"])
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-10deg", "10deg"])
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const width = rect.width
+    const height = rect.height
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
+    const xPct = mouseX / width - 0.5
+    const yPct = mouseY / height - 0.5
+    x.set(xPct)
+    y.set(yPct)
+  }
+
+  const handleMouseLeave = () => {
+    x.set(0)
+    y.set(0)
+  }
+
+  return (
+    <motion.div
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        rotateY,
+        rotateX,
+        transformStyle: "preserve-3d",
+      }}
+      className={`group relative ${className}`}
+    >
+      <div
+        style={{
+          transform: "translateZ(50px)",
+          transformStyle: "preserve-3d",
+        }}
+        className="h-full transition-shadow duration-300 group-hover:shadow-[0_5px_30px_rgba(232,255,71,0.08)]"
+      >
+        {children}
+      </div>
+    </motion.div>
+  )
+}
+
 // --- Center Active Views ---
-function ProjectCard({ project, onClick, index }) {
+function ProjectCard({ project, onClick, index, isBookmarked, onToggleBookmark }) {
   const [isHovered, setIsHovered] = useState(false)
+
+  const handleClick = (e) => {
+    // If the user clicked on the bookmark button area, toggle bookmark
+    if (e.target.closest('[data-bookmark-btn]')) {
+      onToggleBookmark(project.id)
+      return
+    }
+    // Otherwise open project info
+    onClick(project.id)
+  }
 
   return (
     <motion.div
@@ -213,17 +306,33 @@ function ProjectCard({ project, onClick, index }) {
       transition={{ duration: 0.3, delay: index * 0.05 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={() => onClick(project.id)}
+      onClick={handleClick}
       className={`
         relative group cursor-pointer bg-[#0a0a0a] p-5 border rounded-none transition-all duration-300
+        hover:shadow-[0_5px_30px_rgba(232,255,71,0.08)]
         ${isHovered ? "border-[#e8ff47]/50 shadow-[0_0_20px_rgba(232,255,71,0.05)]" : "border-[#1f1f1f]"}
       `}
     >
-      <div className="absolute top-4 right-4 flex gap-2">
+      {/* Bookmark Button */}
+      <div className="absolute top-3 right-3 flex gap-2 items-center">
+        <div
+          data-bookmark-btn="true"
+          className={`p-2.5 rounded-none border transition-all duration-200 hover:scale-110 cursor-pointer ${
+            isBookmarked 
+              ? "border-[#e8ff47] bg-[#e8ff47]/10 text-[#e8ff47]" 
+              : "border-[#333] bg-[#0a0a0a] text-[#666] hover:border-[#e8ff47]/50 hover:text-[#e8ff47]"
+          }`}
+        >
+          <Bookmark 
+            size={16} 
+            className={`pointer-events-none transition-all duration-200 ${isBookmarked ? 'fill-current' : ''}`}
+          />
+        </div>
         <span className={`inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest ${project.status === "open" ? "text-[#e8ff47]" : "text-[#555]"}`}>
            {project.status}
         </span>
       </div>
+
       <h3 className="text-lg font-bold text-white mb-2 font-mono group-hover:text-[#e8ff47] transition-colors pr-16">{project.title}</h3>
       <p className="text-sm text-[#777] mb-4 line-clamp-2 h-10">{project.description}</p>
       <div className="flex flex-wrap gap-2 mt-auto">
@@ -235,7 +344,7 @@ function ProjectCard({ project, onClick, index }) {
   )
 }
 
-function FeedCenterView({ projects, searchQuery, setSearchQuery, selectedTech, setSelectedTech, statusFilter, setStatusFilter, onProjectClick, setIsModalOpen }) {
+function FeedCenterView({ projects, searchQuery, setSearchQuery, selectedTech, setSelectedTech, statusFilter, setStatusFilter, onProjectClick, setIsModalOpen, activeTab, bookmarkedIds, onToggleBookmark }) {
   const [isTechOpen, setIsTechOpen] = useState(false)
   const dropdownRef = useRef(null)
 
@@ -243,6 +352,27 @@ function FeedCenterView({ projects, searchQuery, setSearchQuery, selectedTech, s
     if (selectedTech.includes(tech)) { setSelectedTech(selectedTech.filter((t) => t !== tech)) }
     else { setSelectedTech([...selectedTech, tech]) }
   }
+
+  // Get projects based on active tab
+  const getDisplayProjects = () => {
+    if (activeTab === 'profile') {
+      return myProjects
+    }
+    if (activeTab === 'bookmarks') {
+      return projects.filter(p => bookmarkedIds.includes(p.id))
+    }
+    return projects // 'projects' tab (Explore)
+  }
+
+  const displayProjects = getDisplayProjects()
+
+  const getTitle = () => {
+    if (activeTab === 'profile') return { main: 'My', highlight: 'Projects' }
+    if (activeTab === 'bookmarks') return { main: 'Saved', highlight: 'Bookmarks' }
+    return { main: 'Explore', highlight: 'Projects' }
+  }
+
+  const title = getTitle()
 
   return (
     <motion.div 
@@ -255,7 +385,7 @@ function FeedCenterView({ projects, searchQuery, setSearchQuery, selectedTech, s
     >
       <div className="flex items-center justify-between mb-8">
          <h1 className="text-3xl font-bold text-white font-mono tracking-tight">
-          Explore <span className="text-[#e8ff47]">Projects</span>
+          {title.main} <span className="text-[#e8ff47]">{title.highlight}</span>
         </h1>
         <button
           onClick={() => setIsModalOpen(true)}
@@ -318,13 +448,24 @@ function FeedCenterView({ projects, searchQuery, setSearchQuery, selectedTech, s
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
         <AnimatePresence>
-          {projects.map((project, index) => (
-            <ProjectCard key={project.id} project={project} index={index} onClick={onProjectClick} />
+          {displayProjects.map((project, index) => (
+            <ProjectCard 
+              key={project.id} 
+              project={project} 
+              index={index} 
+              onClick={onProjectClick}
+              isBookmarked={bookmarkedIds.includes(project.id)}
+              onToggleBookmark={onToggleBookmark}
+            />
           ))}
         </AnimatePresence>
-        {projects.length === 0 && (
+        {displayProjects.length === 0 && (
           <div className="col-span-full py-20 text-center border border-[#1f1f1f] bg-[#0a0a0a] rounded-none">
-             <p className="text-[#666] font-mono">No projects found matching criteria.</p>
+             <p className="text-[#666] font-mono">
+               {activeTab === 'bookmarks' ? 'No bookmarked projects yet.' : 
+                activeTab === 'profile' ? 'You haven\'t created any projects yet.' : 
+                'No projects found matching criteria.'}
+             </p>
           </div>
         )}
       </div>
@@ -448,13 +589,9 @@ function CreateProjectModal({ isOpen, onClose, onSubmit }) {
           <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", duration: 0.5 }} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl z-[70] px-4">
             <div className="bg-[#040404] border border-[#1f1f1f] rounded-none shadow-2xl">
               <div className="flex items-center justify-between px-4 py-3 bg-[#0a0a0a] border-b border-[#1f1f1f]">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
-                </div>
+                <div className="w-3" /> {/* Spacer for balance */}
                 <span className="text-xs font-mono text-[#666]">buildspace://new_project</span>
-                <button onClick={onClose} className="text-[#666] hover:text-white transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
+                <button onClick={onClose} className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-400 transition-colors cursor-pointer" title="Close" />
               </div>
               <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
                 <div className="space-y-4">
@@ -498,6 +635,9 @@ export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [projectsDB, setProjectsDB] = useState(sampleProjects) // Replace with Supabase eventually
 
+  // Bookmarks — syncs with Supabase when logged in, localStorage otherwise
+  const { bookmarkedIds, toggleBookmark: handleToggleBookmark } = useBookmarks()
+
   // Derive the active project object if any
   const activeProjectPayload = useMemo(() => {
     if (!activeProjectId) return null;
@@ -527,13 +667,16 @@ export default function Dashboard() {
         <AnimatePresence mode="wait">
           {!activeProjectId ? (
             <FeedCenterView 
-              key="feed-center"
+              key={`feed-center-${activeTab}`}
               projects={filteredProjects}
               searchQuery={searchQuery} setSearchQuery={setSearchQuery}
               selectedTech={selectedTech} setSelectedTech={setSelectedTech}
               statusFilter={statusFilter} setStatusFilter={setStatusFilter}
               onProjectClick={setActiveProjectId}
               setIsModalOpen={setIsModalOpen}
+              activeTab={activeTab}
+              bookmarkedIds={bookmarkedIds}
+              onToggleBookmark={handleToggleBookmark}
             />
           ) : (
             <ProjectDetailCenterView 
