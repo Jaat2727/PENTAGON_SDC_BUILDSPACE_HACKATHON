@@ -26,11 +26,25 @@ const pillars = [
   },
 ];
 
-const outcomes = [
-  "Find the right teammates quickly",
-  "Showcase your profile with credibility",
-  "Track projects and collaboration clearly",
-  "Stay updated on opportunities in real-time",
+const highlights = [
+  { label: "Unified developer identity", value: "1 profile" },
+  { label: "Collaboration workflows", value: "Projects + teams" },
+  { label: "Opportunity discovery", value: "Hackathons + roles" },
+];
+
+const journeySteps = [
+  {
+    title: "Build your profile",
+    text: "Show your skills, interests, and past projects so the right teammates can find you faster.",
+  },
+  {
+    title: "Create or join projects",
+    text: "Post project ideas with your tech stack, invite collaborators, and track team progress.",
+  },
+  {
+    title: "Discover opportunities",
+    text: "Browse hackathon openings, project roles, and teammate requests from one board.",
+  },
 ];
 
 export default function Landing() {
@@ -71,12 +85,35 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="app-shell py-12 sm:py-16">
-        <div className="grid gap-4 md:grid-cols-3">
-          {pillars.map((item) => (
-            <article key={item.title} className="panel panel-hover p-6">
-              <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-300">
-                <item.icon className="h-5 w-5" />
+      {/* ======== HIGHLIGHTS ======== */}
+      <section className="mx-auto max-w-6xl px-4 pb-6 sm:pb-10">
+        <div className="grid gap-3 sm:grid-cols-3">
+          {highlights.map((item) => (
+            <div
+              key={item.label}
+              className="rounded-xl border border-border dark:border-slate-700 bg-white/90 dark:bg-slate-800/80 p-5 text-center"
+            >
+              <p className="text-2xl font-bold text-brand-600 dark:text-brand-400">{item.value}</p>
+              <p className="mt-1 text-sm text-body dark:text-slate-300">{item.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ======== FEATURES ======== */}
+      <section className="mx-auto max-w-6xl px-4 py-20">
+        <h2 className="text-2xl sm:text-3xl font-bold text-heading dark:text-white text-center mb-12">
+          Everything you need to collaborate
+        </h2>
+
+        <div className="grid gap-8 sm:grid-cols-3">
+          {features.map((f) => (
+            <div
+              key={f.title}
+              className="rounded-2xl border border-border dark:border-slate-700 bg-white dark:bg-slate-800 p-7 text-center hover:shadow-xl transition-shadow duration-300"
+            >
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-900/30 mb-5">
+                <f.icon className="w-7 h-7 text-brand-600 dark:text-brand-400" />
               </div>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{item.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{item.desc}</p>
@@ -85,23 +122,37 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="app-shell">
-        <div className="panel p-6 sm:p-8">
-          <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
-            <div>
-              <h2 className="section-title">A focused workflow from profile to shipped project</h2>
-              <p className="section-subtitle mt-3">
-                Designed for hackathons, campus clubs, and early career builders who need speed without chaos.
-              </p>
-              <ul className="mt-6 space-y-3">
-                {outcomes.map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
-                    <HiOutlineCheckCircle className="h-4 w-4 text-emerald-500" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
+      {/* ======== BUILDER JOURNEY ======== */}
+      <section className="mx-auto max-w-5xl px-4 py-16">
+        <h2 className="text-2xl font-bold text-heading dark:text-white text-center mb-8">
+          From idea to shipped project
+        </h2>
+
+        <div className="space-y-4">
+          {journeySteps.map((step, index) => (
+            <div
+              key={step.title}
+              className="rounded-xl border border-border dark:border-slate-700 bg-white dark:bg-slate-800 p-5 sm:p-6"
+            >
+              <div className="flex items-start gap-4">
+                <div className="h-8 w-8 rounded-full bg-brand-600 text-white text-sm font-semibold flex items-center justify-center shrink-0">
+                  {index + 1}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-heading dark:text-white">{step.title}</h3>
+                  <p className="mt-1 text-sm text-body dark:text-slate-300">{step.text}</p>
+                </div>
+              </div>
             </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ======== LIVE FEED PREVIEW ======== */}
+      <section className="mx-auto max-w-4xl px-4 py-16">
+        <h2 className="text-2xl font-bold text-heading dark:text-white text-center mb-8">
+          Live Activity
+        </h2>
 
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-900/50">
               <p className="text-sm font-semibold text-slate-900 dark:text-white">Live Activity Preview</p>
