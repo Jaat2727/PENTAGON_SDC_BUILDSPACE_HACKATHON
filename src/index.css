@@ -42,6 +42,15 @@
   --color-heading: #f0fdff;
   --color-body:    #94a3b8;
   --color-muted:   #64748b;
+
+  /* Additional color variables for landing page */
+  --color-background: #030712;
+  --color-foreground: #f8fafc;
+  --color-primary: #e8ff47;
+  --color-primary-foreground: #000000;
+  --color-card: #0f172a;
+  --color-secondary: #1e293b;
+  --color-muted-foreground: #94a3b8;
 }
 
 /* ——— Dark mode variant ——— */

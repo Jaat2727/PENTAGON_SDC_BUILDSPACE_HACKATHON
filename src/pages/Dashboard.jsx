@@ -489,7 +489,7 @@ function CreateProjectModal({ isOpen, onClose, onSubmit }) {
 }
 
 // --- MAIN WORKSPACE PAGE ---
-export default function ProjectsWorkspace() {
+export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("projects")
   const [activeProjectId, setActiveProjectId] = useState(null)
   const [searchQuery, setSearchQuery] = useState("")
