@@ -152,6 +152,30 @@ export function useProjects() {
     [user]
   );
 
+  // Delete a project
+  const deleteProject = useCallback(async (projectId) => {
+    if (!projectId) return;
+
+    // Optimistic update
+    setProjects(prev => prev.filter(p => p.id !== projectId));
+    setMyProjects(prev => prev.filter(p => p.id !== projectId));
+
+    if (SUPABASE_CONFIG_VALID && user) {
+      const { error } = await supabase
+        .from("projects")
+        .delete()
+        .eq("id", projectId)
+        .eq("owner_id", user.id);
+
+      if (error) {
+        console.error("Failed to delete project:", error);
+        // Re-fetch to sync state if there was an error
+        fetchProjects();
+        if (user) fetchMyProjects();
+      }
+    }
+  }, [user, fetchProjects, fetchMyProjects]);
+
   // Fetch projects owned by a specific user
   const fetchUserProjects = useCallback(async (userId) => {
     if (!SUPABASE_CONFIG_VALID || !userId) return [];
@@ -165,6 +189,6 @@ export function useProjects() {
     return error ? [] : data;
   }, []);
 
-  return { projects, myProjects, loading, createProject, fetchUserProjects, refetch: fetchProjects };
+  return { projects, myProjects, loading, createProject, deleteProject, fetchUserProjects, refetch: fetchProjects };
 }
 

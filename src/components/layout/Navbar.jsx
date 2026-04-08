@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FiSearch, FiBell, FiSettings, FiUser } from "react-icons/fi";
@@ -13,6 +13,9 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
+  const searchRef = useRef(null);
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const location = useLocation();
@@ -26,9 +29,41 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Keyboard shortcut: Cmd/Ctrl + K to focus search
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleLogout = async () => {
     await signOut();
     navigate("/");
+  };
+
+  // Handle search submission (Enter key)
+  const handleSearchSubmit = (e) => {
+    if (e.key === 'Enter' && searchValue.trim()) {
+      const value = searchValue.trim();
+
+      // Check if it looks like an identity hash (starts with 0x)
+      if (value.startsWith('0x')) {
+        // Navigate to hash-based profile route
+        navigate(`/h/${encodeURIComponent(value)}`);
+      } else {
+        // Treat as regular search or username
+        navigate(`/search?q=${encodeURIComponent(value)}`);
+      }
+
+      // Clear and blur the input
+      setSearchValue('');
+      searchRef.current?.blur();
+    }
   };
 
   return (
@@ -75,11 +110,20 @@ export default function Navbar() {
       <div className="flex items-center gap-2 md:gap-3 shrink-0">
         {/* Search Bar */}
         <div className="relative hidden xl:flex items-center group">
-          <FiSearch className="absolute left-3 text-[#888888] w-4 h-4 group-focus-within:text-[#e8ff47] transition-colors" />
+          <FiSearch className={`absolute left-3 w-4 h-4 transition-colors ${isFocused ? 'text-[#e8ff47]' : 'text-[#888888]'}`} />
           <input
+            ref={searchRef}
             type="text"
-            placeholder="Search..."
-            className="w-48 lg:w-56 bg-[#0a0a0a] border border-[#1f1f1f] text-white text-sm h-9 pl-9 pr-10 focus:outline-none focus:border-[#e8ff47] transition-colors rounded-none placeholder:text-[#555555]"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            onKeyDown={handleSearchSubmit}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder="Search or paste IDENTITY_HASH..."
+            className={`w-48 lg:w-56 bg-[#0a0a0a] border transition-all duration-300 text-sm h-9 pl-9 pr-10 focus:outline-none rounded-none placeholder:text-[#555555] ${isFocused
+                ? 'border-[#e8ff47] text-[#e8ff47] font-mono'
+                : 'border-[#1f1f1f] text-white'
+              }`}
           />
           <div className="absolute right-2 flex items-center justify-center border border-[#1f1f1f] bg-[#040404] px-1.5 h-5 text-[10px] text-[#888888] rounded-none font-mono">
             ⌘K

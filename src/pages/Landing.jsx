@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import { motion, useScroll, useTransform, useSpring, useMotionValue, AnimatePresence } from "framer-motion"
 import { Link } from "react-router-dom"
 import { Search, ArrowRight, GitBranch, Users, Zap, Code2, Trophy, Calendar, X } from "lucide-react"
+import TextDecrypt from "../components/ui/TextDecrypt"
 
 // Noise overlay component
 function NoiseOverlay() {
@@ -524,18 +525,25 @@ function ScrollFeedCard({ item, index, scrollProgress, totalCards }) {
 
 function AnimatedFeedColumn() {
   const containerRef = useRef(null);
-  const { scrollYProgress } = useScroll({
+  const { scrollYProgress: rawProgress } = useScroll({
     target: containerRef,
     offset: ["start 10%", "end 90%"],
     layoutEffect: false
   });
+
+  const scrollYProgress = useSpring(rawProgress, { stiffness: 100, damping: 30 });
 
   return (
     <div ref={containerRef} className="relative h-[300vh] w-full">
       <div className="sticky top-32 flex flex-col items-start justify-start overflow-hidden pt-4 h-[500px]">
         <div className="mb-12">
           <div className="flex items-center gap-4">
-            <h2 className="text-5xl font-bold tracking-tight text-white font-sans">What's happening</h2>
+            <TextDecrypt
+              as="h2"
+              text="What's happening"
+              speed={700}
+              className="text-5xl font-bold tracking-tight text-white font-mono"
+            />
             <span className="block h-10 w-3 bg-[#e8ff47] animate-cursor-blink rounded-none" />
           </div>
           <p className="mt-4 text-[#888888] font-mono text-sm">Real-time activity from the BuildSpace community.</p>
@@ -565,17 +573,22 @@ export default function LandingPage() {
   const heroRef = useRef(null)
   const feedRef = useRef(null)
 
-  const { scrollYProgress: heroProgress } = useScroll({
+  const { scrollYProgress: rawHeroProgress } = useScroll({
     target: heroRef,
     offset: ["start start", "end end"],
     layoutEffect: false,
   })
 
-  const { scrollYProgress: feedProgress } = useScroll({
+  const { scrollYProgress: rawFeedProgress } = useScroll({
     target: feedRef,
     offset: ["start start", "end end"],
     layoutEffect: false,
   })
+
+  // Smooth out the scroll progress with spring physics
+  const springConfig = { stiffness: 100, damping: 30, restDelta: 0.001 }
+  const heroProgress = useSpring(rawHeroProgress, springConfig)
+  const feedProgress = useSpring(rawFeedProgress, springConfig)
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -630,15 +643,12 @@ export default function LandingPage() {
         <div className="sticky top-0 flex h-screen items-center overflow-hidden">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-12 px-6 pt-14">
             <div className="max-w-xl">
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, type: "spring" }}
-                className="text-5xl font-bold leading-[1.1] tracking-tight md:text-7xl"
-              >
-                The platform for developers who{" "}
-                <span className="text-[#e8ff47]">build together.</span>
-              </motion.h1>
+              <TextDecrypt
+                as="h1"
+                text="The platform for developers who build together."
+                speed={800}
+                className="text-5xl font-bold leading-[1.1] tracking-tight md:text-7xl font-mono"
+              />
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -683,9 +693,12 @@ export default function LandingPage() {
           viewport={{ once: false, amount: 0.2 }}
           className="mb-16 text-center"
         >
-          <h2 className="text-4xl font-bold tracking-tight md:text-5xl text-white">
-            Everything you need to <span className="text-[#e8ff47]">collaborate</span>
-          </h2>
+          <TextDecrypt
+            as="h2"
+            text="Everything you need to collaborate"
+            speed={600}
+            className="text-4xl font-bold tracking-tight md:text-5xl text-white font-mono text-center"
+          />
         </motion.div>
 
         <motion.div
@@ -783,7 +796,12 @@ export default function LandingPage() {
               </motion.div>
 
               <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.5 }} className="col-span-2 mt-4 flex flex-col justify-center border border-[#e8ff47]/30 bg-[#0a0a0a] p-8 rounded-none">
-                <h3 className="text-2xl font-bold text-white font-sans tracking-tight">Join the community</h3>
+                <TextDecrypt
+                  as="h3"
+                  text="Join the community"
+                  speed={500}
+                  className="text-2xl font-bold text-white tracking-tight font-mono"
+                />
                 <p className="mb-6 mt-2 text-[#888] font-mono text-sm tracking-tight">Connect with student developers building the future.</p>
                 <Link
                   to="/auth"

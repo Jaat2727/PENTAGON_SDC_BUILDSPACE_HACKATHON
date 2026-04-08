@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import useAuthStore from "../store/authStore"
 import { useProfile } from "../hooks/useProfile"
 import { useProjects } from "../hooks/useProjects"
+import { useOpportunities } from "../hooks/useOpportunities"
 import ProfileSkeleton from "./ProfileSkeleton"
 import EditProfileDrawer from "../components/profile/EditProfileDrawer"
 import ProfileView from "../components/profile/ProfileView"
@@ -14,7 +15,7 @@ const categorizeSkills = (skills = []) => {
   }
 
   const result = { Frontend: [], Backend: [], Tools: [] }
-  
+
   skills.forEach(skill => {
     let found = false
     for (const [cat, list] of Object.entries(categories)) {
@@ -40,27 +41,38 @@ export default function Profile() {
   const currentUser = useAuthStore((s) => s.user)
   const authLoading = useAuthStore((s) => s.loading)
   const { profile, loading: profileLoading, updateProfile } = useProfile()
-  const { fetchUserProjects } = useProjects()
-  
+  const { fetchUserProjects, deleteProject } = useProjects()
+  const { opportunities: allOpportunities } = useOpportunities()
+
   const [projects, setProjects] = useState([])
   const [loadingProjects, setLoadingProjects] = useState(true)
   const [editOpen, setEditOpen] = useState(false)
   const [activeSection, setActiveSection] = useState("profile")
 
-  useEffect(() => {
-    async function loadProjects() {
-      if (profile?.id) {
-        setLoadingProjects(true)
-        const userProjects = await fetchUserProjects(profile.id)
-        setProjects(userProjects)
-        setLoadingProjects(false)
-      } else if (!profileLoading) {
-        // If profile finished loading and there's no ID, stop loading projects
-        setLoadingProjects(false)
-      }
+  // Load projects function - memoized to prevent infinite loops
+  const loadProjects = async () => {
+    if (profile?.id) {
+      setLoadingProjects(true)
+      const userProjects = await fetchUserProjects(profile.id)
+      setProjects(userProjects)
+      setLoadingProjects(false)
     }
-    loadProjects()
-  }, [profile?.id, profileLoading, fetchUserProjects])
+  }
+
+  const handleDeleteProject = async (projectId) => {
+    await deleteProject(projectId)
+    setProjects(prev => prev.filter(p => p.id !== projectId))
+  }
+
+  // Fetch projects on mount and when profile changes
+  useEffect(() => {
+    if (profile?.id) {
+      loadProjects()
+    } else if (!profileLoading) {
+      setLoadingProjects(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id, profileLoading])
 
   // SHOW SKELETON:
   // 1. If global auth is still resolving
@@ -73,7 +85,12 @@ export default function Profile() {
   if (!currentUser && !profile) return null
 
   const p = profile || {}
-  const isOwnProfile = profile?.id === currentUser.id
+  const isOwnProfile = currentUser && profile?.id === currentUser.id
+
+  // Filter opportunities created by this user (with safety check)
+  const userOpportunities = (allOpportunities || []).filter(
+    opp => opp.poster_id === profile?.id
+  )
 
   // Map to specified userData structure
   const userData = {
@@ -84,8 +101,8 @@ export default function Profile() {
       isLive: true,
       bio: p.bio,
       location: p.location,
-      joinDate: p.created_at 
-        ? new Date(p.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" }) 
+      joinDate: p.created_at
+        ? new Date(p.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" })
         : "Recently"
     },
     skills: {
@@ -103,7 +120,8 @@ export default function Profile() {
       followers: formatStat(p.followers_count),
       stars: formatStat(projects.reduce((acc, curr) => acc + (curr.stars_count || 0), 0))
     },
-    projects: projects
+    projects: projects,
+    opportunities: userOpportunities
   }
 
   const handleSaveProfile = async (updates) => {
@@ -117,15 +135,16 @@ export default function Profile() {
 
   return (
     <>
-      <ProfileView 
-        userData={userData} 
-        isOwn={isOwnProfile} 
-        onEdit={handleEditClick} 
+      <ProfileView
+        userData={userData}
+        isOwn={isOwnProfile}
+        onEdit={handleEditClick}
+        onDeleteProject={handleDeleteProject}
       />
-      
-      <EditProfileDrawer 
-        open={editOpen} 
-        onClose={() => setEditOpen(false)} 
+
+      <EditProfileDrawer
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
         profile={p}
         onSave={handleSaveProfile}
         targetSection={activeSection}

@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from "react"
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion"
-import { Plus, Search, ChevronDown, X, Compass, Bookmark, User, TrendingUp, Users, ExternalLink, ArrowLeft } from "lucide-react"
+import { Plus, Search, ChevronDown, X, Compass, Bookmark, User, TrendingUp, Users, ExternalLink, ArrowLeft, Trash2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "../lib/supabaseClient"
 import { useBookmarks } from "../hooks/useBookmarks"
@@ -419,7 +419,7 @@ function FeedCenterView({ projects, myProjectsList, searchQuery, setSearchQuery,
   )
 }
 
-function ProjectDetailCenterView({ project, onBack, user, incomingRequests, updateRequest, refetchRequests }) {
+function ProjectDetailCenterView({ project, onBack, user, incomingRequests, updateRequest, refetchRequests, onDelete }) {
   if (!project) return null
 
   const isOwner = user?.id === project.owner_id
@@ -469,9 +469,20 @@ function ProjectDetailCenterView({ project, onBack, user, incomingRequests, upda
 
         <div className="flex items-start justify-between flex-wrap gap-4 mb-6 relative z-10">
           <h1 className="text-3xl md:text-4xl font-bold text-white font-mono tracking-tight">{project.title}</h1>
-          <span className={`px-3 py-1 text-xs font-mono font-bold uppercase border rounded-none ${project.status === 'open' ? 'border-[#e8ff47]/30 text-[#e8ff47] bg-[#e8ff47]/10' : 'border-[#444] text-[#888] bg-[#111]'}`}>
-            {project.status}
-          </span>
+          <div className="flex items-center gap-3">
+            {isOwner && (
+              <button
+                onClick={() => onDelete(project)}
+                className="p-2 text-[#444] hover:text-red-500 hover:bg-red-500/5 transition-all border border-transparent hover:border-red-500/20 cursor-pointer"
+                title="Delete Project"
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
+            <span className={`px-3 py-1 text-xs font-mono font-bold uppercase border rounded-none ${project.status === 'open' ? 'border-[#e8ff47]/30 text-[#e8ff47] bg-[#e8ff47]/10' : 'border-[#444] text-[#888] bg-[#111]'}`}>
+              {project.status}
+            </span>
+          </div>
         </div>
 
         <p className="text-[#aaa] text-base md:text-lg leading-relaxed mb-8 max-w-3xl relative z-10">
@@ -658,6 +669,54 @@ function CreateProjectModal({ isOpen, onClose, onSubmit }) {
   )
 }
 
+function ProtocolTerminationModal({ isOpen, onClose, onConfirm, projectTitle }) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100]" />
+          <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md z-[110] px-4">
+            <div className="bg-[#0a0a0a] border border-red-500/20 rounded-none shadow-2xl relative overflow-hidden">
+              {/* Scanline effect */}
+              <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] pointer-events-none opacity-20" />
+              
+              <div className="p-8 relative z-10">
+                <div className="flex items-center gap-3 mb-6 text-red-500 font-mono text-sm tracking-tighter">
+                  <span className="animate-pulse">⚠</span>
+                  <span>// PROTOCOL_TERMINATION_SEQUENCE</span>
+                </div>
+                
+                <h3 className="text-xl font-bold text-white mb-4 font-mono">
+                  Confirm Archive Erasure?
+                </h3>
+                
+                <p className="text-[#666] text-sm font-mono mb-8 leading-relaxed">
+                  You are about to permanently delete <span className="text-white">"{projectTitle}"</span> from the registry. This action cannot be reversed. All repository metadata will be purged.
+                </p>
+
+                <div className="flex flex-col gap-3">
+                  <button 
+                    onClick={onConfirm}
+                    className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-bold font-mono text-xs uppercase tracking-widest transition-all rounded-none cursor-pointer"
+                  >
+                    Confirm Termination
+                  </button>
+                  <button 
+                    onClick={onClose}
+                    className="w-full py-3 bg-transparent border border-[#1f1f1f] text-[#666] hover:text-white hover:border-[#333] font-mono text-xs uppercase tracking-widest transition-all rounded-none cursor-pointer"
+                  >
+                    Abort Mission
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  )
+}
+
 // --- MAIN WORKSPACE PAGE ---
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("projects")
@@ -666,12 +725,13 @@ export default function Dashboard() {
   const [selectedTech, setSelectedTech] = useState([])
   const [statusFilter, setStatusFilter] = useState("all")
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   // Auth
   const user = useAuthStore((s) => s.user)
 
   // Projects — Supabase-backed
-  const { projects: allProjects, myProjects: myProjectsList, createProject } = useProjects()
+  const { projects: allProjects, myProjects: myProjectsList, createProject, deleteProject } = useProjects()
 
   // Join Requests — Supabase-backed
   const { sendJoinRequest, hasRequested, getRequestStatus, incomingRequests, updateRequest, refetch: refetchRequests } = useJoinRequests()
@@ -736,6 +796,7 @@ export default function Dashboard() {
               incomingRequests={incomingRequests}
               updateRequest={updateRequest}
               refetchRequests={refetchRequests}
+              onDelete={(proj) => setDeleteTarget(proj)}
             />
           )}
         </AnimatePresence>
@@ -786,6 +847,19 @@ export default function Dashboard() {
             techStack: newP.techStack,
             repoUrl: newP.githubUrl,
           })
+        }}
+      />
+
+      <ProtocolTerminationModal
+        isOpen={!!deleteTarget}
+        projectTitle={deleteTarget?.title}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) {
+            deleteProject(deleteTarget.id);
+            setDeleteTarget(null);
+            setActiveProjectId(null);
+          }
         }}
       />
     </div>

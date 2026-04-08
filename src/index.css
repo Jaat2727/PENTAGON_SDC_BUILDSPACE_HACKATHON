@@ -113,6 +113,17 @@
     }
   }
 
+  @property --angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+
+  @keyframes spin-border {
+    from { --angle: 0deg; }
+    to { --angle: 360deg; }
+  }
+
   .animate-fade-up {
     animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
