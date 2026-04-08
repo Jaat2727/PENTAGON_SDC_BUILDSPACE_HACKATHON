@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
 import { Mail, Lock, User, ArrowRight } from "lucide-react"
 import { FiGithub } from "react-icons/fi"
 import { useSearchParams, useNavigate } from "react-router-dom"
@@ -10,7 +10,7 @@ function GridBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {/* Grid Pattern */}
-      <div 
+      <div
         className="absolute inset-0"
         style={{
           backgroundImage: `
@@ -21,12 +21,12 @@ function GridBackground() {
         }}
       />
       {/* Subtle radial gradient overlay */}
-      <div 
+      <div
         className="absolute inset-0"
         style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(232, 255, 71, 0.03) 0%, transparent 50%)' }}
       />
       {/* Bottom fade */}
-      <div 
+      <div
         className="absolute bottom-0 left-0 right-0 h-40"
         style={{ background: 'linear-gradient(to top, #040404, transparent)' }}
       />
@@ -81,7 +81,7 @@ function AnimatedInput({ icon: Icon, label, type, value, onChange, placeholder }
   const inputRef = useRef(null)
 
   return (
-    <motion.div 
+    <motion.div
       className="space-y-2"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -102,8 +102,8 @@ function AnimatedInput({ icon: Icon, label, type, value, onChange, placeholder }
       </label>
       <motion.div
         animate={{
-          boxShadow: isFocused 
-            ? '0 0 20px rgba(232, 255, 71, 0.3), inset 0 0 0 1px #e8ff47' 
+          boxShadow: isFocused
+            ? '0 0 20px rgba(232, 255, 71, 0.3), inset 0 0 0 1px #e8ff47'
             : '0 0 0 rgba(232, 255, 71, 0), inset 0 0 0 1px rgba(255, 255, 255, 0.1)',
         }}
         transition={{ duration: 0.2 }}
@@ -147,9 +147,8 @@ function SlidingTabs({ activeTab, onTabChange }) {
           key={tab.id}
           type="button"
           onClick={() => onTabChange(tab.id)}
-          className={`relative z-10 flex-1 py-2 px-4 text-sm font-mono cursor-pointer transition-colors duration-200 ${
-            activeTab === tab.id ? "text-black" : "text-[#888] hover:text-white"
-          }`}
+          className={`relative z-10 flex-1 py-2 px-4 text-sm font-mono cursor-pointer transition-colors duration-200 ${activeTab === tab.id ? "text-black" : "text-[#888] hover:text-white"
+            }`}
         >
           {tab.label}
         </button>
@@ -182,8 +181,8 @@ function GlitchButton({ onClick }) {
         type="button"
         className="relative flex items-center justify-center w-full h-14 bg-[#e8ff47] text-black hover:bg-[#e8ff47] font-bold text-base transition-all duration-200 rounded-none cursor-pointer"
         style={{
-          boxShadow: isHovering 
-            ? '0 0 40px rgba(232, 255, 71, 0.5), 0 0 80px rgba(232, 255, 71, 0.3)' 
+          boxShadow: isHovering
+            ? '0 0 40px rgba(232, 255, 71, 0.5), 0 0 80px rgba(232, 255, 71, 0.3)'
             : '0 0 20px rgba(232, 255, 71, 0.2)'
         }}
       >
@@ -264,10 +263,10 @@ function AuthCard() {
   const [searchParams] = useSearchParams()
   const modeParam = searchParams.get("mode")
   const [activeTab, setActiveTab] = useState(modeParam === "signup" ? "signup" : "login")
-  
+
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState(null)
-  
+
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -299,9 +298,9 @@ function AuthCard() {
       options: { data: { username, display_name: username } }
     })
     if (error) {
-       setErrorMsg(error.message)
+      setErrorMsg(error.message)
     } else if (user) {
-       handleLogin(email, password)
+      handleLogin(email, password)
     }
     setLoading(false)
   }
@@ -312,7 +311,7 @@ function AuthCard() {
 
   return (
     <div className="relative">
-      <div 
+      <div
         className="absolute -inset-4 rounded-none blur-2xl opacity-40 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse at center, rgba(232, 255, 71, 0.15) 0%, transparent 70%)' }}
       />
@@ -335,7 +334,7 @@ function AuthCard() {
             <span className="text-[#666]">{" - Developer Portal"}</span>
           </div>
           <SlidingTabs activeTab={activeTab} onTabChange={setActiveTab} />
-          
+
           {errorMsg && (
             <div className="bg-red-500/10 border border-red-500/30 p-3 rounded-none text-red-500 text-xs font-mono">
               {"// Error: "}
@@ -380,32 +379,72 @@ function AuthCard() {
 }
 
 export default function AuthPage() {
+  const heroRef = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+    layoutEffect: false,
+  })
+
+  const rotateX = useTransform(scrollYProgress, [0, 1], [15, 0])
+  const rotateY = useTransform(scrollYProgress, [0, 1], [-15, 0])
+  const y3d = useTransform(scrollYProgress, [0, 1], [0, 150])
+  const opacity3d = useTransform(scrollYProgress, [0.5, 1], [1, 0])
+
+  const staggerVariants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  }
+
+  const childVariants = {
+    hidden: { opacity: 0, y: 40 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: "spring", stiffness: 80, damping: 20 },
+    },
+  }
+
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[#040404] relative overflow-hidden flex font-sans">
+    <div ref={heroRef} className="min-h-[calc(100vh-64px)] bg-[#040404] relative overflow-hidden flex font-sans">
       <GridBackground />
       <div className="relative z-10 w-full flex">
-        
-        {/* Left Side - Terminal Auth Card */}
+
+        {/* Left Side - Terminal Auth Card with stagger reveal */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full max-w-md"
+            variants={staggerVariants}
+            initial="hidden"
+            animate="visible"
+            className="w-full max-w-md space-y-4"
           >
-            <AuthCard />
+            <motion.div variants={childVariants}>
+              <AuthCard />
+            </motion.div>
           </motion.div>
         </div>
 
-        {/* Right Side - 3D Interactive Placeholder */}
+        {/* Right Side - 3D Scroll-Linked Interactive Placeholder */}
         <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12 relative flex-col">
           <motion.div
+            style={{
+              rotateX,
+              rotateY,
+              y: y3d,
+              opacity: opacity3d,
+              transformStyle: "preserve-3d",
+              willChange: "transform, opacity",
+            }}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
             className="w-full h-full max-h-[700px] border border-[#1f1f1f] bg-[#0a0a0a]/50 backdrop-blur-sm flex items-center justify-center relative overflow-hidden rounded-none shadow-[inset_0_0_100px_rgba(0,0,0,0.5)]"
           >
-            <div 
+            <div
               className="absolute inset-0 opacity-10"
               style={{
                 backgroundImage: `linear-gradient(rgba(232, 255, 71, 0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(232, 255, 71, 0.5) 1px, transparent 1px)`,
@@ -430,13 +469,13 @@ export default function AuthPage() {
                 </motion.div>
               </div>
             </motion.div>
-            
+
             <div className="absolute bottom-6 left-0 right-0 text-center">
               <p className="text-[#666] font-mono text-xs">
                 {"// Replace this orb with Spline 3D Scene in production"}
               </p>
             </div>
-            
+
             <FloatingCodeSnippet />
           </motion.div>
         </div>

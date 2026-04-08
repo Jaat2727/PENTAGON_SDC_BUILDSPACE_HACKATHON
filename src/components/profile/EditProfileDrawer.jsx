@@ -1,25 +1,55 @@
 /*
   EditProfileDrawer.jsx
   ---------------------
-  Futuristic slide-over drawer with cyber aesthetics.
+  Futuristic slide-over drawer with BuildSpace aesthetics.
 */
 
 import { useState, useEffect } from "react";
-import Button from "../ui/Button";
-import Input from "../ui/Input";
+import { X, Save, User, Globe, MapPin, Terminal } from "lucide-react";
+import { FiGithub, FiLinkedin, FiTwitter } from "react-icons/fi";
 import SkillsGrid from "./SkillsGrid";
 
-export default function EditProfileDrawer({ open, onClose, profile, onSave }) {
-  const [form, setForm] = useState(() => ({
-    display_name: profile?.display_name || "",
-    bio: profile?.bio || "",
-    github_url: profile?.github_url || "",
-    linkedin_url: profile?.linkedin_url || "",
-    skills: profile?.skills || [],
-  }));
+const cn = (...classes) => classes.filter(Boolean).join(" ");
+
+export default function EditProfileDrawer({ open, onClose, profile, onSave, targetSection }) {
+  const [form, setForm] = useState({
+    display_name: "",
+    bio: "",
+    github_url: "",
+    linkedin_url: "",
+    twitter_url: "",
+    website_url: "",
+    location: "",
+    skills: [],
+    avatar_url: "",
+    status: "",
+    commits_count: 0,
+    followers_count: 0,
+  });
+
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setForm({
+        display_name: profile.display_name || "",
+        bio: profile.bio || "",
+        github_url: profile.github_url || "",
+        linkedin_url: profile.linkedin_url || "",
+        twitter_url: profile.twitter_url || "",
+        website_url: profile.website_url || "",
+        location: profile.location || "",
+        skills: profile.skills || [],
+        avatar_url: profile.avatar_url || "",
+        status: profile.status || "CORE_DEVELOPER",
+        commits_count: profile.commits_count || 0,
+        followers_count: profile.followers_count || 0,
+      });
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (open) {
@@ -33,111 +63,232 @@ export default function EditProfileDrawer({ open, onClose, profile, onSave }) {
   }, [open]);
 
   async function handleSubmit(e) {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setSaving(true);
-    await onSave(form);
-    setSaving(false);
-    onClose();
+    setError(null);
+    try {
+      const result = await onSave(form);
+      if (result?.error) {
+        setError(result.error.message || "Failed to update profile.");
+        setSaving(false);
+      } else {
+        setSaving(false);
+        onClose();
+      }
+    } catch (err) {
+      setError("An unexpected error occurred.");
+      setSaving(false);
+    }
   }
 
   if (!isVisible) return null;
 
+  const sectionConfig = {
+    profile: { 
+      title: "Edit Core identity", 
+      subtitle: "Update your name, bio, and visual presence", 
+      icon: User,
+      color: "#e8ff47",
+      bg: "bg-[#e8ff47]/10"
+    },
+    skills: { 
+      title: "Technical Arsenal", 
+      subtitle: "Define your engineering stack", 
+      icon: Terminal,
+      color: "#00bcd4",
+      bg: "bg-[#00bcd4]/10"
+    },
+    connect: { 
+      title: "Connection Protocols", 
+      subtitle: "Link your digital fingerprints", 
+      icon: Globe,
+      color: "#f43f5e",
+      bg: "bg-[#f43f5e]/10"
+    },
+    default: { 
+      title: "Edit Profile", 
+      subtitle: "Update your developer registry", 
+      icon: User,
+      color: "#e8ff47",
+      bg: "bg-[#e8ff47]/10"
+    }
+  };
+
+  const currentConfig = sectionConfig[targetSection] || sectionConfig.default;
+
+  const InputField = ({ label, icon: Icon, value, onChange, placeholder, type = "text" }) => (
+    <div className="space-y-2">
+      <label className="text-[10px] font-mono uppercase tracking-wider text-[#666] flex items-center gap-2">
+        {Icon && <Icon size={12} className="text-[#444]" />}
+        {label}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="w-full bg-[#0a0a0a] border border-[#1f1f1f] rounded-none px-4 py-2 text-sm text-white focus:outline-none focus:border-[#e8ff47]/30 font-mono placeholder:text-[#333]"
+      />
+    </div>
+  );
+
   return (
-    <div className={`fixed inset-0 z-50 flex justify-end transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`}>
+    <div className={`fixed inset-0 z-[100] flex justify-end transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`}>
       {/* backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
 
       {/* drawer panel */}
-      <div className={`relative w-full max-w-md transform transition-transform duration-300 ease-out ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
-        {/* Glow effect */}
-        <div className="absolute -left-2 inset-y-0 w-px bg-gradient-to-b from-cyan-500/50 via-violet-500/50 to-cyan-500/50 blur-sm" />
+      <div 
+        className={`relative w-full max-w-lg border-l border-[#1f1f1f] shadow-2xl transform transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}
+        style={{ borderColor: `${currentConfig.color}22` }}
+      >
         
-        <div className="h-full bg-slate-900/95 backdrop-blur-xl overflow-y-auto border-l border-cyan-500/20">
-          {/* Header pattern */}
-          <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
-            backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(0, 255, 255, 0.3) 1px, transparent 0)',
-            backgroundSize: '24px 24px'
-          }} />
-
-          <div className="relative p-6">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-400">
-                Edit Profile
-              </h2>
-              <button
-                onClick={onClose}
-                className="p-2 rounded-xl text-slate-400 hover:text-cyan-400 bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 hover:border-cyan-500/30 transition-all cursor-pointer group"
-              >
-                <svg className="w-5 h-5 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+        <div className="h-full bg-[#040404] flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between p-8 border-b border-[#1f1f1f]">
+            <div className="flex items-center gap-4">
+              <div className={cn("p-3 border border-white/5 shadow-[0_0_15px_rgba(255,255,255,0.02)]", currentConfig.bg)}>
+                <currentConfig.icon size={24} style={{ color: currentConfig.color }} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white tracking-tighter uppercase" style={{ color: currentConfig.color }}>{currentConfig.title}</h2>
+                <p className="text-[11px] font-mono text-[#444] tracking-widest uppercase">{currentConfig.subtitle}</p>
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              className="p-2 text-[#444] hover:text-white transition-all cursor-pointer hover:rotate-90"
+            >
+              <X size={28} />
+            </button>
+          </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <Input
-                label="Display Name"
-                value={form.display_name}
-                onChange={(e) => setForm({ ...form, display_name: e.target.value })}
-              />
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
+            {error && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-[11px] font-mono uppercase tracking-widest">
+                {error}
+              </div>
+            )}
 
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-slate-300">Bio</label>
-                <div className="relative">
+            {/* Profile Section */}
+            {(targetSection === "profile" || !targetSection) && (
+              <div className="space-y-8">
+                <InputField
+                  label="Registry Name"
+                  icon={User}
+                  value={form.display_name}
+                  onChange={(e) => setForm({ ...form, display_name: e.target.value })}
+                  placeholder="Alex Chen"
+                />
+                
+                <div className="space-y-3">
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-[#666]">
+                    Description_Log
+                  </label>
                   <textarea
-                    rows={4}
+                    rows={5}
                     value={form.bio}
                     onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                    className="w-full rounded-xl border border-cyan-500/20 bg-slate-800/60 px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/40 resize-none transition-all"
-                    placeholder="Tell others about yourself..."
+                    className="w-full bg-[#0a0a0a] border border-[#1f1f1f] rounded-none px-4 py-3 text-sm text-white focus:outline-none focus:border-[#e8ff47]/50 font-mono placeholder:text-[#333] resize-none leading-relaxed"
                   />
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-500/5 to-violet-500/5 pointer-events-none" />
                 </div>
-              </div>
 
-              <div>
-                <label className="text-sm font-medium text-slate-300 mb-3 block">Skills</label>
+                 <InputField
+                  label="Global Coordinates"
+                  icon={MapPin}
+                  value={form.location}
+                  onChange={(e) => setForm({ ...form, location: e.target.value })}
+                  placeholder="San Francisco, CA"
+                />
+
+                <InputField
+                  label="Avatar Link"
+                  icon={Globe}
+                  value={form.avatar_url}
+                  onChange={(e) => setForm({ ...form, avatar_url: e.target.value })}
+                  placeholder="https://..."
+                />
+
+                <InputField
+                  label="System Status"
+                  icon={Terminal}
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value })}
+                  placeholder="CORE_DEVELOPER"
+                />
+              </div>
+            )}
+
+            {/* Skills Section */}
+            {targetSection === "skills" && (
+              <div className="space-y-6">
+                <p className="text-xs text-[#888] font-mono leading-relaxed mb-6">Select the primary technologies for your developer profile. These will be highlighted in your Technical Arsenal.</p>
                 <SkillsGrid
                   skills={form.skills}
                   editable
                   onChange={(skills) => setForm({ ...form, skills })}
                 />
               </div>
+            )}
 
-              <Input
-                label="GitHub URL"
-                value={form.github_url}
-                onChange={(e) => setForm({ ...form, github_url: e.target.value })}
-                placeholder="https://github.com/yourname"
-              />
-
-              <Input
-                label="LinkedIn URL"
-                value={form.linkedin_url}
-                onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })}
-                placeholder="https://linkedin.com/in/yourname"
-              />
-
-              <div className="flex gap-3 pt-4">
-                <Button type="submit" disabled={saving} className="flex-1">
-                  {saving ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Saving...
-                    </span>
-                  ) : "Save Changes"}
-                </Button>
-                <Button variant="secondary" type="button" onClick={onClose}>
-                  Cancel
-                </Button>
+            {/* Connect Section */}
+            {targetSection === "connect" && (
+              <div className="space-y-8">
+                <InputField
+                  label="GitHub UID"
+                  icon={FiGithub}
+                  value={form.github_url}
+                  onChange={(e) => setForm({ ...form, github_url: e.target.value })}
+                  placeholder="github.com/..."
+                />
+                <InputField
+                  label="LinkedIn Token"
+                  icon={FiLinkedin}
+                  value={form.linkedin_url}
+                  onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })}
+                  placeholder="linkedin.com/..."
+                />
+                <InputField
+                  label="Twitter Handle"
+                  icon={FiTwitter}
+                  value={form.twitter_url}
+                  onChange={(e) => setForm({ ...form, twitter_url: e.target.value })}
+                  placeholder="twitter.com/..."
+                />
+                <InputField
+                  label="Personal Grid"
+                  icon={Globe}
+                  value={form.website_url}
+                  onChange={(e) => setForm({ ...form, website_url: e.target.value })}
+                  placeholder="portfolio.com"
+                />
               </div>
-            </form>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="p-8 border-t border-[#1f1f1f] bg-[#070707] flex items-center gap-4">
+            <button
+              onClick={onClose}
+              className="flex-1 py-4 text-[11px] font-mono font-bold border border-[#1f1f1f] text-[#666] hover:text-white hover:border-[#444] transition-all uppercase tracking-widest"
+            >
+              ABORT
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={saving}
+              className="flex-1 py-4 bg-[#e8ff47] text-black text-[11px] font-bold font-mono border border-[#e8ff47] shadow-[0_5px_30px_rgba(232,255,71,0.1)] hover:shadow-[0_5px_40px_rgba(232,255,71,0.2)] transition-all flex items-center justify-center gap-2 disabled:opacity-50 uppercase tracking-widest"
+            >
+              {saving ? <div className="size-4 border-2 border-black/20 border-t-black animate-spin rounded-full" /> : <Save size={16} />}
+              Commit_Changes
+            </button>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+
+

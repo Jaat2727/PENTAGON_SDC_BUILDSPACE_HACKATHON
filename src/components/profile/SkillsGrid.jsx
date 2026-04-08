@@ -1,16 +1,30 @@
 /*
   SkillsGrid.jsx
   --------------
-  Futuristic skills display with cyber chip styling.
+  Futuristic skills display with BuildSpace aesthetics.
 */
 
 import { useState } from "react";
+import { Plus, X } from "lucide-react";
 
 export default function SkillsGrid({ skills = [], editable = false, onChange }) {
   const [input, setInput] = useState("");
 
+  const skillColors = {
+    TypeScript: "#e8ff47",
+    React: "#e8ff47",
+    "Next.js": "#e8ff47",
+    "Node.js": "#999",
+    PostgreSQL: "#a855f7",
+    GraphQL: "#a855f7",
+    Rust: "#f97316",
+    WebGL: "#3b82f6",
+    Docker: "#3b82f6",
+    AWS: "#f97316",
+  };
+
   function addSkill(e) {
-    e.preventDefault();
+    if (e) e.preventDefault();
     const trimmed = input.trim();
     if (!trimmed || skills.includes(trimmed)) return;
     onChange([...skills, trimmed]);
@@ -23,61 +37,61 @@ export default function SkillsGrid({ skills = [], editable = false, onChange }) 
   }
 
   return (
-    <div>
+    <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        {skills.map((skill, index) => (
-          <button
-            key={skill}
-            onClick={() => removeSkill(skill)}
-            disabled={!editable}
-            style={{ animationDelay: `${index * 50}ms` }}
-            className={`group relative px-3 py-1.5 text-sm font-mono rounded-lg border transition-all duration-300 animate-fade-up ${
-              editable 
-                ? "cursor-pointer hover:border-red-500/50 hover:bg-red-500/10" 
-                : "cursor-default"
-            } bg-gradient-to-r from-cyan-500/10 to-violet-500/10 border-cyan-500/30 text-cyan-300`}
-          >
-            <span className="relative flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-              {skill}
-              {editable && (
-                <span className="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                  &times;
-                </span>
-              )}
-            </span>
-          </button>
-        ))}
+        {skills.map((skill, index) => {
+          const color = skillColors[skill] || "#666";
+          return (
+            <button
+              key={skill}
+              onClick={() => removeSkill(skill)}
+              disabled={!editable}
+              className={`group relative px-2.5 py-1 text-[10px] font-mono border transition-all duration-300 ${
+                editable 
+                  ? "cursor-pointer hover:border-red-500/50 hover:bg-red-500/5" 
+                  : "cursor-default"
+              } bg-[#0a0a0a] border-[#1f1f1f]`}
+              style={{ 
+                color: color,
+                borderColor: editable ? undefined : `${color}33`,
+              }}
+            >
+              <span className="relative flex items-center gap-2">
+                {skill}
+                {editable && (
+                  <X size={10} className="text-[#444] group-hover:text-red-400 transition-colors" />
+                )}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {editable && (
-        <div className="mt-4 flex gap-2">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  addSkill(e);
-                }
-              }}
-              placeholder="Add a skill..."
-              className="w-full rounded-xl border border-cyan-500/20 bg-slate-800/60 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/40 transition-all font-mono"
-            />
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-500/5 to-violet-500/5 pointer-events-none" />
-          </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                addSkill(e);
+              }
+            }}
+            placeholder="Add a skill..."
+            className="flex-1 bg-[#0a0a0a] border border-[#1f1f1f] rounded-none px-3 py-2 text-xs text-white focus:outline-none focus:border-[#e8ff47]/50 font-mono placeholder:text-[#333]"
+          />
           <button
             type="button"
             onClick={addSkill}
-            className="group relative px-5 py-2.5 rounded-xl text-sm font-medium text-white overflow-hidden transition-all cursor-pointer"
+            className="px-4 bg-[#111] border border-[#1f1f1f] text-[#666] hover:text-[#e8ff47] hover:border-[#e8ff47]/30 transition-all font-mono text-[10px] flex items-center gap-2 cursor-pointer"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-violet-500 transition-all group-hover:scale-105" />
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-violet-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <span className="relative">Add</span>
+            <Plus size={12} />
+            ADD
           </button>
         </div>
       )}
     </div>
   );
 }
+

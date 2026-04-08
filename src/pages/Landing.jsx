@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import { motion, useScroll, useTransform, useSpring, useMotionValue, AnimatePresence } from "framer-motion"
 import { Link } from "react-router-dom"
 import { Search, ArrowRight, GitBranch, Users, Zap, Code2, Trophy, Calendar, X } from "lucide-react"
+import TextDecrypt from "../components/ui/TextDecrypt"
 
 // Noise overlay component
 function NoiseOverlay() {
@@ -164,9 +165,13 @@ function CommandPalette({ isOpen, onClose }) {
 
 // 3D Terminal component for hero
 function Terminal3D({ scrollProgress }) {
-  const rotateX = useTransform(scrollProgress, [0, 1], [60, 0])
-  const rotateZ = useTransform(scrollProgress, [0, 1], [-45, 0])
-  const scale = useTransform(scrollProgress, [0, 1], [1, 0.85])
+  // Smoother, more refined scroll-linked animations
+  const rotateX = useTransform(scrollProgress, [0, 0.5, 1], [55, 25, 0])
+  const rotateZ = useTransform(scrollProgress, [0, 0.5, 1], [-35, -15, 0])
+  const rotateY = useTransform(scrollProgress, [0, 0.5, 1], [-10, -5, 0])
+  const scale = useTransform(scrollProgress, [0, 0.5, 1], [0.95, 0.9, 0.85])
+  const y = useTransform(scrollProgress, [0, 1], [0, 50])
+  const opacity = useTransform(scrollProgress, [0, 0.8, 1], [1, 1, 0.6])
 
   const lines = [
     { prefix: "$", text: "buildspace init my-project", color: "text-[#e8ff47]" },
@@ -180,10 +185,11 @@ function Terminal3D({ scrollProgress }) {
   ]
 
   return (
-    <div className="perspective-[1000px] hidden md:block">
+    <div className="perspective-[1200px] relative hidden md:block">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-[#e8ff47] opacity-20 blur-[100px] -z-10 rounded-full pointer-events-none mix-blend-screen" />
       <motion.div
-        style={{ rotateX, rotateZ, scale }}
-        className="w-[500px] border border-[#1f1f1f] bg-[#0a0a0a] p-6 shadow-2xl"
+        style={{ rotateX, rotateZ, rotateY, scale, y, opacity }}
+        className="w-[500px] border border-[#1f1f1f] bg-[#0a0a0a] p-6 shadow-2xl origin-center"
       >
         <div className="mb-4 flex items-center gap-2">
           <div className="h-3 w-3 bg-[#ff5f57]" />
@@ -331,7 +337,7 @@ function SkillRadar() {
         {skills.map((s) => {
           const p = getPoint(s.angle, 1.25)
           return (
-             <text key={s.name} x={p.x} y={p.y} fill="#666" fontSize="10" fontFamily="monospace" textAnchor="middle" dominantBaseline="middle">
+            <text key={s.name} x={p.x} y={p.y} fill="#666" fontSize="10" fontFamily="monospace" textAnchor="middle" dominantBaseline="middle">
               {s.name}
             </text>
           )
@@ -346,10 +352,10 @@ function HackathonTags() {
   const allTags = ["TreeHacks", "CalHacks", "PennApps", "HackGT", "MHacks", "HackNY", "HackTX", "Bitcamp", "BoilerMake", "HackIllinois", "HackMIT 2026", "LAHacks", "nwHacks", "HackTheNorth", "SB Hacks", "HackDavis"]
 
   const row1 = [...allTags, ...allTags]
-  
+
   const offset2 = [...allTags.slice(6), ...allTags.slice(0, 6)]
   const row2 = [...offset2, ...offset2]
-  
+
   const offset3 = [...allTags.slice(11), ...allTags.slice(0, 11)]
   const row3 = [...offset3, ...offset3]
 
@@ -358,40 +364,40 @@ function HackathonTags() {
       <div className="flex flex-col gap-3">
         {/* Row 1: LTR */}
         <motion.div
-           animate={{ x: [0, "-50%"] }}
-           transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-           className="flex gap-3 w-max pr-3"
+          animate={{ x: [0, "-50%"] }}
+          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+          className="flex gap-3 w-max pr-3"
         >
           {row1.map((tag, i) => (
-             <span key={`r1-${i}`} className="shrink-0 border border-[#1f1f1f] bg-transparent text-[#888888] px-3 py-1 text-sm whitespace-nowrap rounded-none hover:border-[#e8ff47] hover:text-white transition-colors duration-200 cursor-pointer">
-               {tag}
-             </span>
+            <span key={`r1-${i}`} className="shrink-0 border border-[#1f1f1f] bg-transparent text-[#888888] px-3 py-1 text-sm whitespace-nowrap rounded-none hover:border-[#e8ff47] hover:text-white transition-colors duration-200 cursor-pointer">
+              {tag}
+            </span>
           ))}
         </motion.div>
-        
+
         {/* Row 2: RTL. Start at -50% and go to 0. */}
         <motion.div
-           animate={{ x: ["-50%", 0] }}
-           transition={{ duration: 35, repeat: Infinity, ease: "linear" }}
-           className="flex gap-3 w-max pr-3"
+          animate={{ x: ["-50%", 0] }}
+          transition={{ duration: 35, repeat: Infinity, ease: "linear" }}
+          className="flex gap-3 w-max pr-3"
         >
           {row2.map((tag, i) => (
-             <span key={`r2-${i}`} className="shrink-0 border border-[#1f1f1f] bg-transparent text-[#888888] px-3 py-1 text-sm whitespace-nowrap rounded-none hover:border-[#e8ff47] hover:text-white transition-colors duration-200 cursor-pointer">
-               {tag}
-             </span>
+            <span key={`r2-${i}`} className="shrink-0 border border-[#1f1f1f] bg-transparent text-[#888888] px-3 py-1 text-sm whitespace-nowrap rounded-none hover:border-[#e8ff47] hover:text-white transition-colors duration-200 cursor-pointer">
+              {tag}
+            </span>
           ))}
         </motion.div>
 
         {/* Row 3: LTR */}
         <motion.div
-           animate={{ x: [0, "-50%"] }}
-           transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
-           className="flex gap-3 w-max pr-3"
+          animate={{ x: [0, "-50%"] }}
+          transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
+          className="flex gap-3 w-max pr-3"
         >
           {row3.map((tag, i) => (
-             <span key={`r3-${i}`} className="shrink-0 border border-[#1f1f1f] bg-transparent text-[#888888] px-3 py-1 text-sm whitespace-nowrap rounded-none hover:border-[#e8ff47] hover:text-white transition-colors duration-200 cursor-pointer">
-               {tag}
-             </span>
+            <span key={`r3-${i}`} className="shrink-0 border border-[#1f1f1f] bg-transparent text-[#888888] px-3 py-1 text-sm whitespace-nowrap rounded-none hover:border-[#e8ff47] hover:text-white transition-colors duration-200 cursor-pointer">
+              {tag}
+            </span>
           ))}
         </motion.div>
       </div>
@@ -443,16 +449,16 @@ function ScrollFeedCard({ item, index, scrollProgress, totalCards }) {
   // Step 1: Card 0 Deals Away, Card 1 becomes Front
   // Step 2: Card 1 Deals Away, Card 2 becomes Front
   // Step 3: Card 2 Deals Away, Card 3 stays visible (last card)
-  
+
   const isLastCard = index === totalCards - 1;
   const steps = totalCards - 1; // Stop one step earlier so last card stays
-  
+
   for (let s = 0; s <= steps; s++) {
     inputPoints.push(s / steps);
-    
+
     // relative distance between current scroll step and this card's index
-    const relativePos = index - s; 
-    
+    const relativePos = index - s;
+
     if (relativePos === 0) {
       // Front and center
       yRange.push(0);
@@ -494,7 +500,7 @@ function ScrollFeedCard({ item, index, scrollProgress, totalCards }) {
   return (
     <motion.div
       style={{ y, scale, opacity, zIndex: totalCards - index }}
-      className="absolute top-0 left-0 w-full max-w-md border border-[#1f1f1f] bg-[#0a0a0a] p-6 rounded-none shadow-2xl origin-top"
+      className="absolute top-0 left-0 w-full max-w-md border border-[#1f1f1f] bg-[#0a0a0a] p-6 rounded-none shadow-2xl origin-top z-10"
     >
       <div className="mb-3 flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center border border-[#1f1f1f] bg-[#040404] font-mono text-sm text-[#e8ff47] rounded-none">
@@ -519,27 +525,41 @@ function ScrollFeedCard({ item, index, scrollProgress, totalCards }) {
 
 function AnimatedFeedColumn() {
   const containerRef = useRef(null);
-  const { scrollYProgress } = useScroll({ 
-    target: containerRef, 
+  const { scrollYProgress: rawProgress } = useScroll({
+    target: containerRef,
     offset: ["start 10%", "end 90%"],
-    layoutEffect: false 
+    layoutEffect: false
   });
+
+  const scrollYProgress = useSpring(rawProgress, { stiffness: 100, damping: 30 });
 
   return (
     <div ref={containerRef} className="relative h-[300vh] w-full">
       <div className="sticky top-32 flex flex-col items-start justify-start overflow-hidden pt-4 h-[500px]">
         <div className="mb-12">
-          <h2 className="text-5xl font-bold tracking-tight text-white font-sans">What's happening</h2>
+          <div className="flex items-center gap-4">
+            <TextDecrypt
+              as="h2"
+              text="What's happening"
+              speed={700}
+              className="text-5xl font-bold tracking-tight text-white font-mono"
+            />
+            <span className="block h-10 w-3 bg-[#e8ff47] animate-cursor-blink rounded-none" />
+          </div>
           <p className="mt-4 text-[#888888] font-mono text-sm">Real-time activity from the BuildSpace community.</p>
         </div>
         <div className="relative w-full max-w-md h-[300px]">
+          {/* Ambient radial glow - light source beneath cards */}
+          <div
+            className="absolute bottom-[-10%] left-1/2 -translate-x-1/2 z-0 w-[600px] h-[300px] rounded-full bg-[#e8ff47] opacity-[0.04] blur-[120px] pointer-events-none"
+          />
           {feedCardData.map((item, index) => (
-            <ScrollFeedCard 
-              key={index} 
-              item={item} 
-              index={index} 
-              scrollProgress={scrollYProgress} 
-              totalCards={feedCardData.length} 
+            <ScrollFeedCard
+              key={index}
+              item={item}
+              index={index}
+              scrollProgress={scrollYProgress}
+              totalCards={feedCardData.length}
             />
           ))}
         </div>
@@ -553,17 +573,22 @@ export default function LandingPage() {
   const heroRef = useRef(null)
   const feedRef = useRef(null)
 
-  const { scrollYProgress: heroProgress } = useScroll({
+  const { scrollYProgress: rawHeroProgress } = useScroll({
     target: heroRef,
     offset: ["start start", "end end"],
     layoutEffect: false,
   })
 
-  const { scrollYProgress: feedProgress } = useScroll({
+  const { scrollYProgress: rawFeedProgress } = useScroll({
     target: feedRef,
     offset: ["start start", "end end"],
     layoutEffect: false,
   })
+
+  // Smooth out the scroll progress with spring physics
+  const springConfig = { stiffness: 100, damping: 30, restDelta: 0.001 }
+  const heroProgress = useSpring(rawHeroProgress, springConfig)
+  const feedProgress = useSpring(rawFeedProgress, springConfig)
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -618,15 +643,12 @@ export default function LandingPage() {
         <div className="sticky top-0 flex h-screen items-center overflow-hidden">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-12 px-6 pt-14">
             <div className="max-w-xl">
-              <motion.h1
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, type: "spring" }}
-                className="text-5xl font-bold leading-[1.1] tracking-tight md:text-7xl"
-              >
-                The platform for developers who{" "}
-                <span className="text-[#e8ff47]">build together.</span>
-              </motion.h1>
+              <TextDecrypt
+                as="h1"
+                text="The platform for developers who build together."
+                speed={800}
+                className="text-5xl font-bold leading-[1.1] tracking-tight md:text-7xl font-mono"
+              />
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -666,14 +688,17 @@ export default function LandingPage() {
       {/* Bento Grid Features */}
       <section className="relative mx-auto min-h-screen max-w-6xl overflow-visible px-6 py-32 z-10 bg-[#040404]">
         <motion.div
-           initial={{ opacity: 0, y: 20 }}
-           whileInView={{ opacity: 1, y: 0 }}
-           viewport={{ once: false, amount: 0.2 }}
-           className="mb-16 text-center"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, amount: 0.2 }}
+          className="mb-16 text-center"
         >
-          <h2 className="text-4xl font-bold tracking-tight md:text-5xl text-white">
-            Everything you need to <span className="text-[#e8ff47]">collaborate</span>
-          </h2>
+          <TextDecrypt
+            as="h2"
+            text="Everything you need to collaborate"
+            speed={600}
+            className="text-4xl font-bold tracking-tight md:text-5xl text-white font-mono text-center"
+          />
         </motion.div>
 
         <motion.div
@@ -681,61 +706,61 @@ export default function LandingPage() {
           whileInView="visible"
           viewport={{ once: true, amount: 0.1 }}
           variants={{
-             hidden: { perspective: 1000 },
-             visible: { transition: { staggerChildren: 0.15 } }
+            hidden: { perspective: 1000 },
+            visible: { transition: { staggerChildren: 0.15 } }
           }}
           className="grid grid-cols-1 lg:grid-cols-3 gap-6 auto-rows-fr"
         >
           {/* CARD 1 - PROJECT COLLABORATION */}
-          <motion.div 
-             variants={{
-               hidden: { opacity: 0, rotateX: 90, scale: 0.95, transformOrigin: 'top' },
-               visible: { opacity: 1, rotateX: 0, scale: 1, transition: { type: 'spring', stiffness: 100, damping: 20 } }
-             }}
-             className="col-span-1 lg:col-span-2 lg:row-span-1 border border-[#1f1f1f] bg-[#0a0a0a] p-8 flex flex-col justify-between overflow-hidden relative rounded-none shadow-2xl"
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, rotateX: 90, scale: 0.95, transformOrigin: 'top' },
+              visible: { opacity: 1, rotateX: 0, scale: 1, transition: { type: 'spring', stiffness: 100, damping: 20 } }
+            }}
+            className="col-span-1 lg:col-span-2 lg:row-span-1 border border-[#1f1f1f] bg-[#0a0a0a] p-8 flex flex-col justify-between overflow-hidden relative rounded-none shadow-2xl"
           >
-             <div>
-               <div className="text-xs uppercase text-[#888] tracking-widest font-mono mb-2">PROJECT COLLABORATION</div>
-               <h3 className="text-3xl font-bold text-white font-sans">Real-time code collaboration</h3>
-             </div>
-             <CodeDiff />
+            <div>
+              <div className="text-xs uppercase text-[#888] tracking-widest font-mono mb-2">PROJECT COLLABORATION</div>
+              <h3 className="text-3xl font-bold text-white font-sans">Real-time code collaboration</h3>
+            </div>
+            <CodeDiff />
           </motion.div>
 
           {/* CARD 3 - DEVELOPER PROFILES (Right Column) */}
-          <motion.div 
-             variants={{
-               hidden: { opacity: 0, rotateX: 90, scale: 0.95, transformOrigin: 'top' },
-               visible: { opacity: 1, rotateX: 0, scale: 1, transition: { type: 'spring', stiffness: 100, damping: 20 } }
-             }}
-             className="col-span-1 lg:col-span-1 lg:row-span-2 border border-[#1f1f1f] bg-[#0a0a0a] p-8 flex flex-col overflow-hidden relative rounded-none shadow-2xl"
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, rotateX: 90, scale: 0.95, transformOrigin: 'top' },
+              visible: { opacity: 1, rotateX: 0, scale: 1, transition: { type: 'spring', stiffness: 100, damping: 20 } }
+            }}
+            className="col-span-1 lg:col-span-1 lg:row-span-2 border border-[#1f1f1f] bg-[#0a0a0a] p-8 flex flex-col overflow-hidden relative rounded-none shadow-2xl"
           >
-             <div>
-               <div className="text-xs uppercase text-[#888] tracking-widest font-mono mb-2">DEVELOPER PROFILES</div>
-               <h3 className="text-3xl font-bold text-white font-sans text-balance">Showcase your skills</h3>
-             </div>
-             <SkillRadar />
-             <ProfileSnippet />
+            <div>
+              <div className="text-xs uppercase text-[#888] tracking-widest font-mono mb-2">DEVELOPER PROFILES</div>
+              <h3 className="text-3xl font-bold text-white font-sans text-balance">Showcase your skills</h3>
+            </div>
+            <SkillRadar />
+            <ProfileSnippet />
           </motion.div>
 
           {/* CARD 2 - OPPORTUNITY BOARD */}
-          <motion.div 
-             variants={{
-               hidden: { opacity: 0, rotateX: 90, scale: 0.95, transformOrigin: 'top' },
-               visible: { opacity: 1, rotateX: 0, scale: 1, transition: { type: 'spring', stiffness: 100, damping: 20 } }
-             }}
-             className="col-span-1 lg:col-span-2 lg:row-span-1 border border-[#1f1f1f] bg-[#0a0a0a] p-8 flex flex-col justify-between overflow-hidden relative rounded-none shadow-2xl"
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, rotateX: 90, scale: 0.95, transformOrigin: 'top' },
+              visible: { opacity: 1, rotateX: 0, scale: 1, transition: { type: 'spring', stiffness: 100, damping: 20 } }
+            }}
+            className="col-span-1 lg:col-span-2 lg:row-span-1 border border-[#1f1f1f] bg-[#0a0a0a] p-8 flex flex-col justify-between overflow-hidden relative rounded-none shadow-2xl"
           >
-             <div 
-               className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full pointer-events-none"
-               style={{ background: 'radial-gradient(circle at bottom right, rgba(232,255,71,0.05) 0%, transparent 60%)' }}
-             />
-             <div className="relative z-10 flex flex-col">
-               <div>
-                  <div className="text-xs uppercase text-[#888] tracking-widest font-mono mb-2">OPPORTUNITY BOARD</div>
-                  <h3 className="text-3xl font-bold text-white font-sans">Never miss a hackathon</h3>
-               </div>
-               <HackathonTags />
-             </div>
+            <div
+              className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full pointer-events-none"
+              style={{ background: 'radial-gradient(circle at bottom right, rgba(232,255,71,0.05) 0%, transparent 60%)' }}
+            />
+            <div className="relative z-10 flex flex-col">
+              <div>
+                <div className="text-xs uppercase text-[#888] tracking-widest font-mono mb-2">OPPORTUNITY BOARD</div>
+                <h3 className="text-3xl font-bold text-white font-sans">Never miss a hackathon</h3>
+              </div>
+              <HackathonTags />
+            </div>
           </motion.div>
         </motion.div>
       </section>
@@ -744,7 +769,7 @@ export default function LandingPage() {
       <section className="bg-[#040404] text-white">
         <div className="mx-auto max-w-7xl px-6 py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24">
-            
+
             {/* LEFT COLUMN: The Feed */}
             <AnimatedFeedColumn />
 
@@ -754,7 +779,7 @@ export default function LandingPage() {
                 <div className="text-4xl font-bold text-[#e8ff47] tracking-tight font-sans">2,400+</div>
                 <div className="mt-2 font-mono text-[10px] uppercase tracking-[0.2em] text-[#888]">Active developers</div>
               </motion.div>
-              
+
               <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="flex flex-col justify-center border border-[#1f1f1f] bg-[#0a0a0a] p-8 rounded-none">
                 <div className="text-4xl font-bold text-white tracking-tight font-sans">180+</div>
                 <div className="mt-2 font-mono text-[10px] uppercase tracking-[0.2em] text-[#888]">Projects launched</div>
@@ -771,7 +796,12 @@ export default function LandingPage() {
               </motion.div>
 
               <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.5 }} className="col-span-2 mt-4 flex flex-col justify-center border border-[#e8ff47]/30 bg-[#0a0a0a] p-8 rounded-none">
-                <h3 className="text-2xl font-bold text-white font-sans tracking-tight">Join the community</h3>
+                <TextDecrypt
+                  as="h3"
+                  text="Join the community"
+                  speed={500}
+                  className="text-2xl font-bold text-white tracking-tight font-mono"
+                />
                 <p className="mb-6 mt-2 text-[#888] font-mono text-sm tracking-tight">Connect with student developers building the future.</p>
                 <Link
                   to="/auth"

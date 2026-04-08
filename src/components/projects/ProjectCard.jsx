@@ -3,6 +3,8 @@
   ---------------
   Premium glassmorphic project card with hover glow effect.
   Shows title, description, tech stack badges, and status.
+  Supports join requests — when a user clicks "Join Team",
+  a request is sent to the project owner via useJoinRequests.
 */
 
 import { Link } from "react-router-dom";
@@ -12,15 +14,29 @@ import Avatar from "../ui/Avatar";
 import Button from "../ui/Button";
 import { HiOutlineCode } from "react-icons/hi";
 import { useState } from "react";
+import { useJoinRequests } from "../../hooks/useJoinRequests";
+import useAuthStore from "../../store/authStore";
 
 export default function ProjectCard({ project, index = 0 }) {
   const [isHovered, setIsHovered] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
   const isOpen = project.status === "open";
 
-  const handleJoinTeam = () => {
+  const user = useAuthStore((s) => s.user);
+  const { sendJoinRequest, hasRequested, getRequestStatus } = useJoinRequests();
+
+  const alreadyRequested = hasRequested(project.id);
+  const requestStatus = getRequestStatus(project.id);
+  const isOwner = project.owner_id === user?.id;
+
+  const handleJoinTeam = async () => {
+    if (!user || alreadyRequested || !isOpen || isOwner) return;
     setIsRequesting(true);
-    setTimeout(() => setIsRequesting(false), 2000);
+    const result = await sendJoinRequest(project.id, project.owner_id, project.title);
+    setIsRequesting(false);
+    if (result.error) {
+      alert(result.error);
+    }
   };
 
   return (
@@ -31,18 +47,15 @@ export default function ProjectCard({ project, index = 0 }) {
       transition={{ duration: 0.4, delay: index * 0.1 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`card p-6 flex flex-col h-full group relative transition-all duration-300 ${
-        isHovered ? "shadow-[0_0_30px_rgba(232,255,71,0.15)] border-[#e8ff47]/30" : ""
-      }`}
+      className={`card p-6 flex flex-col h-full group relative transition-all duration-300 ${isHovered ? "shadow-[0_0_30px_rgba(232,255,71,0.15)] border-[#e8ff47]/30" : ""
+        }`}
     >
       {/* Status indicator */}
       <div className="absolute top-4 right-4">
-        <span className={`inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider ${
-          isOpen ? "text-[#e8ff47]" : "text-slate-500"
-        }`}>
-          <span className={`w-2 h-2 rounded-full ${
-            isOpen ? "bg-[#e8ff47] animate-pulse" : "bg-slate-500"
-          }`} />
+        <span className={`inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider ${isOpen ? "text-[#e8ff47]" : "text-slate-500"
+          }`}>
+          <span className={`w-2 h-2 rounded-full ${isOpen ? "bg-[#e8ff47] animate-pulse" : "bg-slate-500"
+            }`} />
           {project.status}
         </span>
       </div>
@@ -64,8 +77,8 @@ export default function ProjectCard({ project, index = 0 }) {
       {project.tech_stack?.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
           {project.tech_stack.slice(0, 5).map((tech) => (
-            <Badge 
-              key={tech} 
+            <Badge
+              key={tech}
               color="slate"
               className="bg-[#e8ff47]/10 text-[#e8ff47] border-[#e8ff47]/30 font-mono text-xs"
             >
@@ -108,12 +121,19 @@ export default function ProjectCard({ project, index = 0 }) {
         <Button
           size="sm"
           onClick={handleJoinTeam}
-          disabled={!isOpen || isRequesting}
-          className={`font-mono text-xs transition-all duration-200 ${
-            isHovered && isOpen
-              ? "bg-white text-black hover:bg-white/90"
-              : "bg-[#e8ff47] text-black hover:bg-[#e8ff47]/90"
-          }`}
+          disabled={!isOpen || isRequesting || alreadyRequested || isOwner}
+          className={`font-mono text-xs transition-all duration-200 ${requestStatus === "accepted"
+              ? "bg-green-500/20 text-green-400 border border-green-500/30 cursor-default"
+              : requestStatus === "declined"
+                ? "bg-red-500/20 text-red-400 border border-red-500/30 cursor-default"
+                : alreadyRequested
+                  ? "bg-[#e8ff47]/20 text-[#e8ff47] border border-[#e8ff47]/30 cursor-default"
+                  : isOwner
+                    ? "bg-slate-700 text-slate-400 cursor-default"
+                    : isHovered && isOpen
+                      ? "bg-white text-black hover:bg-white/90"
+                      : "bg-[#e8ff47] text-black hover:bg-[#e8ff47]/90"
+            }`}
         >
           {isRequesting ? (
             <motion.span
@@ -129,6 +149,14 @@ export default function ProjectCard({ project, index = 0 }) {
               </motion.span>
               Sending...
             </motion.span>
+          ) : requestStatus === "accepted" ? (
+            "✓ Joined"
+          ) : requestStatus === "declined" ? (
+            "Declined"
+          ) : alreadyRequested ? (
+            "Request Sent"
+          ) : isOwner ? (
+            "Your Project"
           ) : !isOpen ? (
             "Closed"
           ) : (
